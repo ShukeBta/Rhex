@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/popover"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/toast"
+import { describeIconSource } from "@/lib/icon-source"
 import { cn } from "@/lib/utils"
 
 const DEFAULT_ICON_PRESETS = [
@@ -74,6 +75,10 @@ export function IconPicker({
   const [open, setOpen] = useState(false)
   const [uploading, setUploading] = useState(false)
   const normalizedValue = useMemo(() => value.trim(), [value])
+  const normalizedDisplayText = useMemo(
+    () => displayText ?? describeIconSource(normalizedValue),
+    [displayText, normalizedValue],
+  )
 
   async function uploadIcon(file: File) {
     if (!file.type.startsWith("image/")) {
@@ -154,7 +159,7 @@ export function IconPicker({
           </span>
           {triggerMode === "icon" ? null : (
             <span className="min-w-0 flex-1 truncate">
-              {displayText || normalizedValue || placeholder}
+              {normalizedDisplayText || placeholder}
             </span>
           )}
         </PopoverTrigger>

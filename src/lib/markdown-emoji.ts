@@ -1,3 +1,5 @@
+import { isImageSource, isSvgMarkup, stripSvgDocumentPrefix } from "@/lib/icon-source"
+
 export interface MarkdownEmojiItem {
   shortcode: string
   label: string
@@ -7,11 +9,6 @@ export interface MarkdownEmojiItem {
 }
 
 const SHORTCODE_PATTERN = /^[a-z0-9][a-z0-9_-]{0,31}$/i
-const SVG_WRAPPER_PATTERN = /^<svg[\s\S]*<\/svg>$/i
-const REMOTE_URL_PATTERN = /^(https?:)?\/\//i
-const DATA_IMAGE_PATTERN = /^data:image\//i
-const BLOB_URL_PATTERN = /^blob:/i
-const LOCAL_ASSET_PATTERN = /^(\/|\.\/|\.\.\/)/
 const MARKDOWN_EMOJI_GROUP_MAX_LENGTH = 24
 export const MARKDOWN_EMOJI_DISPLAY_SIZE_MIN = 0.75
 export const MARKDOWN_EMOJI_DISPLAY_SIZE_MAX = 6
@@ -63,25 +60,6 @@ export function formatMarkdownEmojiDisplaySize(value: unknown) {
   return typeof normalizedValue === "number" ? String(normalizedValue) : ""
 }
 
-function isSvgMarkup(value: string) {
-  return SVG_WRAPPER_PATTERN.test(value.trim())
-}
-
-function isImageSource(value: string) {
-  const normalizedValue = value.trim()
-
-  if (!normalizedValue || isSvgMarkup(normalizedValue)) {
-    return false
-  }
-
-  return (
-    REMOTE_URL_PATTERN.test(normalizedValue) ||
-    DATA_IMAGE_PATTERN.test(normalizedValue) ||
-    BLOB_URL_PATTERN.test(normalizedValue) ||
-    LOCAL_ASSET_PATTERN.test(normalizedValue)
-  )
-}
-
 export function isMarkdownEmojiSvg(icon?: string | null) {
   return !!icon && isSvgMarkup(icon)
 }
@@ -100,7 +78,7 @@ function escapeHtml(value: string) {
 }
 
 function buildSvgMarkup(svg: string) {
-  return svg.trim()
+  return stripSvgDocumentPrefix(svg)
 }
 
 function buildMarkdownEmojiDisplaySizeAttributes(displaySize: MarkdownEmojiItem["displaySize"]) {

@@ -9,6 +9,7 @@ import {
 } from "@/db/verification-queries"
 import { getCurrentUser } from "@/lib/auth"
 import { enforceSensitiveText } from "@/lib/content-safety"
+import { isSvgMarkup } from "@/lib/icon-source"
 import { parseVerificationFormSchema, type VerificationFormField } from "@/lib/verification-form-schema"
 export type { VerificationFieldType, VerificationFormField } from "@/lib/verification-form-schema"
 
@@ -74,7 +75,6 @@ const CUSTOM_VERIFICATION_ICON_MAX_LENGTH = 24
 const CUSTOM_VERIFICATION_ICON_URL_MAX_LENGTH = 2048
 const REMOTE_ICON_URL_PATTERN = /^https?:\/\/\S+$/i
 const LOCAL_ICON_PATH_PATTERN = /^(\/|\.\/|\.\.\/)\S+$/
-const INLINE_SVG_PATTERN = /^<svg[\s\S]*<\/svg>$/i
 
 function hasNonEmptyFormResponse(input: Record<string, string>) {
   return Object.values(input).some((value) => value.trim().length > 0)
@@ -87,7 +87,7 @@ function normalizeCustomVerificationIconText(input?: string | null) {
     return ""
   }
 
-  if (INLINE_SVG_PATTERN.test(normalized)) {
+  if (isSvgMarkup(normalized)) {
     throw new Error("请上传 SVG 文件或填写 SVG 链接，暂不支持直接粘贴 SVG 源码")
   }
 

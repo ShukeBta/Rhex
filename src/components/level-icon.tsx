@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { isImageSource, isSvgMarkup, stripSvgDocumentPrefix } from "@/lib/icon-source"
 
 interface LevelIconProps {
   icon?: string | null
@@ -9,31 +10,6 @@ interface LevelIconProps {
   svgClassName?: string
   emojiClassName?: string
   title?: string
-}
-
-const SVG_WRAPPER_PATTERN = /^<svg[\s\S]*<\/svg>$/i
-const REMOTE_URL_PATTERN = /^(https?:)?\/\//i
-const DATA_IMAGE_PATTERN = /^data:image\//i
-const BLOB_URL_PATTERN = /^blob:/i
-const LOCAL_ASSET_PATTERN = /^(\/|\.\/|\.\.\/)/
-
-function isSvgMarkup(value: string) {
-  return SVG_WRAPPER_PATTERN.test(value.trim())
-}
-
-function isImageSource(value: string) {
-  const normalizedValue = value.trim()
-
-  if (!normalizedValue || isSvgMarkup(normalizedValue)) {
-    return false
-  }
-
-  return (
-    REMOTE_URL_PATTERN.test(normalizedValue) ||
-    DATA_IMAGE_PATTERN.test(normalizedValue) ||
-    BLOB_URL_PATTERN.test(normalizedValue) ||
-    LOCAL_ASSET_PATTERN.test(normalizedValue)
-  )
 }
 
 export function normalizeLevelIcon(icon?: string | null) {
@@ -55,7 +31,7 @@ export function isLevelImageIcon(icon?: string | null) {
 }
 
 function buildSvgMarkup(svg: string, color?: string) {
-  let markup = svg.trim()
+  let markup = stripSvgDocumentPrefix(svg)
 
   if (!markup) {
     return ""
@@ -67,7 +43,7 @@ function buildSvgMarkup(svg: string, color?: string) {
     // Preserve embedded SVG colors. Only fall back to currentColor when the SVG
     // does not declare its own paint attributes and is intended to inherit text color.
     if (!hasExplicitPaint && !/\s(fill|stroke)=/i.test(markup)) {
-      markup = markup.replace(/^<svg\b/i, '<svg fill="currentColor"')
+      markup = markup.replace(/<svg\b/i, '<svg fill="currentColor"')
     }
   }
 

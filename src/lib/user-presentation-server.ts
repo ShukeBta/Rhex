@@ -8,6 +8,7 @@ import {
   collectHookableBadgeCodes,
   getDefaultPublicUserRoleBadge,
   normalizeHookedAvatarPath,
+  normalizePublicUserIconText,
   type HookableUserBadge,
   type PublicUserDisplayedBadge,
   type PublicUserIdentityTag,
@@ -74,15 +75,6 @@ function normalizePresentationColor(value: unknown, fallback = "#64748b") {
   return PUBLIC_COLOR_PATTERN.test(normalized) ? normalized : fallback
 }
 
-function normalizeIconText(value: unknown, maxLength = 4096) {
-  if (typeof value !== "string") {
-    return null
-  }
-
-  const normalized = value.trim()
-  return normalized ? normalized.slice(0, maxLength) : null
-}
-
 function normalizePublicUidValue(value: unknown) {
   return normalizePresentationText(value, 32)
 }
@@ -104,7 +96,7 @@ function normalizeLevelBadgeValue(
     : fallback?.level
   const name = normalizePresentationText(record.name, 32) ?? fallback?.name
   const color = normalizePresentationColor(record.color, fallback?.color ?? "#64748b")
-  const icon = normalizeIconText(record.icon) ?? fallback?.icon
+  const icon = normalizePublicUserIconText(record.icon) ?? fallback?.icon
 
   if (!level || !name || !icon) {
     return fallback
@@ -137,8 +129,8 @@ function normalizeVerificationBadgeValue(
     id,
     name,
     color,
-    iconText: normalizeIconText(record.iconText) ?? fallback?.iconText ?? null,
-    customIconText: normalizeIconText(record.customIconText) ?? fallback?.customIconText ?? null,
+    iconText: normalizePublicUserIconText(record.iconText) ?? fallback?.iconText ?? null,
+    customIconText: normalizePublicUserIconText(record.customIconText) ?? fallback?.customIconText ?? null,
     description: normalizePresentationText(record.description, 160) ?? fallback?.description ?? null,
     customDescription: normalizePresentationText(record.customDescription, 160) ?? fallback?.customDescription ?? null,
   }
@@ -164,7 +156,7 @@ function normalizeDisplayedBadgeValue(
     name,
     description: normalizePresentationText(record.description, 160),
     color: normalizePresentationColor(record.color),
-    iconText: normalizeIconText(record.iconText),
+    iconText: normalizePublicUserIconText(record.iconText),
     displayOrder: typeof record.displayOrder === "number" && Number.isFinite(record.displayOrder)
       ? Math.trunc(record.displayOrder)
       : index,

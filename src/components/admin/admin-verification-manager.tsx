@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { showConfirm } from "@/components/ui/alert-dialog"
+import { describeIconSource } from "@/lib/icon-source"
 import { formatDateTime } from "@/lib/formatters"
 import type { VerificationFormField } from "@/lib/verification-form-schema"
 import { cn } from "@/lib/utils"
@@ -536,7 +537,7 @@ export function AdminVerificationManager({ initialTypes, initialApplications, mo
                             <div className="flex h-10 w-10 items-center justify-center rounded-2xl" style={{ backgroundColor: `${item.type.color}18`, color: item.type.color }}>
                               <LevelIcon icon={item.customIconText} color={item.type.color} className="h-5 w-5 text-[20px]" emojiClassName="text-inherit" svgClassName="[&>svg]:block" />
                             </div>
-                            <p className="text-xs leading-6 text-muted-foreground break-all">{item.customIconText}</p>
+                            <p className="text-xs leading-6 text-muted-foreground break-all">{describeIconSource(item.customIconText)}</p>
                           </div>
                         </div>
                       ) : null}

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/rbutton"
 import { showConfirm } from "@/components/ui/alert-dialog"
 import { IconPicker } from "@/components/ui/icon-picker"
 import { formatDateTime } from "@/lib/formatters"
+import { describeIconSource } from "@/lib/icon-source"
 import type { VerificationFormField } from "@/lib/verification-form-schema"
 
 type VerificationApplicationStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED"
@@ -295,7 +296,7 @@ export function VerificationCenter({ types, approvedVerification }: Verification
                         <div className="flex h-10 w-10 items-center justify-center rounded-2xl" style={{ backgroundColor: `${selectedType.color}18`, color: selectedType.color }}>
                           <LevelIcon icon={currentApplication.customIconText} color={selectedType.color} className="h-5 w-5 text-[20px]" emojiClassName="text-inherit" svgClassName="[&>svg]:block" />
                         </div>
-                        <p className="break-all text-foreground">{currentApplication.customIconText}</p>
+                        <p className="break-all text-foreground">{describeIconSource(currentApplication.customIconText)}</p>
                       </div>
                     </div>
                   ) : null}

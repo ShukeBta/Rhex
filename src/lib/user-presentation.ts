@@ -1,4 +1,5 @@
 import { formatNumber } from "@/lib/formatters"
+import { isImageSource, isSvgMarkup } from "@/lib/icon-source"
 import { getVipLevel, isVipActive } from "@/lib/vip-status"
 
 export interface HookableUserBadge {
@@ -61,6 +62,34 @@ export interface PublicUserRoleBadge {
   shortLabel?: string | null
   tone?: PublicUserIdentityTagTone
   tooltip?: string | null
+}
+
+export const PUBLIC_USER_ICON_TEXT_MAX_LENGTH = 24
+export const PUBLIC_USER_ICON_SOURCE_MAX_LENGTH = 20000
+
+export function normalizePublicUserIconText(value: unknown) {
+  if (typeof value !== "string") {
+    return null
+  }
+
+  const normalized = value.trim()
+  if (!normalized) {
+    return null
+  }
+
+  if (isSvgMarkup(normalized)) {
+    return normalized.length <= PUBLIC_USER_ICON_SOURCE_MAX_LENGTH ? normalized : null
+  }
+
+  if (isImageSource(normalized)) {
+    return normalized.length <= PUBLIC_USER_ICON_SOURCE_MAX_LENGTH ? normalized : null
+  }
+
+  if (normalized.startsWith("<") || normalized.includes("<svg")) {
+    return null
+  }
+
+  return normalized.slice(0, PUBLIC_USER_ICON_TEXT_MAX_LENGTH)
 }
 
 export function buildDefaultPublicUserIdentityTags(input: {
