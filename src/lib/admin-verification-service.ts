@@ -13,6 +13,7 @@ import { getRequestIp, writeAdminLog } from "@/lib/admin"
 import type { AdminActor } from "@/lib/moderator-permissions"
 import { createSystemNotification } from "@/lib/notification-writes"
 import { getUserDisplayName } from "@/lib/user-display"
+import { revalidateUserProfileMutation } from "@/lib/user-profile-revalidation"
 import { parseVerificationFormSchema } from "@/lib/verification-form-schema"
 
 function normalizeText(value: unknown, fallback = "") {
@@ -217,6 +218,10 @@ export async function updateVerificationTypeOrReview(params: {
     })
 
     await writeAdminLog(params.admin.id, `verification.review.${status.toLowerCase()}`, "USER_VERIFICATION", applicationId, `${status === "APPROVED" ? "通过" : "驳回"} ${getUserDisplayName(application.user)} 的 ${application.type.name} 认证申请`, requestIp)
+    revalidateUserProfileMutation({
+      userId: application.userId,
+      username: application.user.username,
+    })
     return { reviewed: true, status }
   }
 

@@ -110,6 +110,7 @@ export async function createSystemNotification(params: {
   content: string
   relatedType?: RelatedType
   senderId?: number | null
+  url?: string | null
   client?: NotificationWriteClient
 }) {
   const notification = await createNotification({
@@ -119,6 +120,7 @@ export async function createSystemNotification(params: {
     senderId: params.senderId ?? null,
     relatedType: params.relatedType ?? "ANNOUNCEMENT",
     relatedId: params.relatedId,
+    url: params.url ?? null,
     title: params.title,
     content: params.content,
   })
@@ -134,7 +136,7 @@ export async function createSystemNotification(params: {
         relatedType: notification.relatedType,
         relatedId: notification.relatedId,
         createdAt: notification.createdAt.toISOString(),
-        inboxPath: "/notifications",
+        inboxPath: notification.url ?? "/notifications",
       },
     },
   }).catch((error) => {
@@ -177,6 +179,7 @@ async function fireNotificationCreateBefore(draft: NotificationDraft) {
       senderId: draft.senderId ?? null,
       relatedType: draft.relatedType,
       relatedId: draft.relatedId,
+      url: draft.url ?? null,
       title: draft.title,
       content: draft.content,
     },
@@ -216,6 +219,7 @@ async function expandNotificationTargets(drafts: NotificationDraft[]): Promise<N
               senderId: draft.senderId ?? null,
               relatedType: String(draft.relatedType),
               relatedId: draft.relatedId,
+              url: draft.url ?? null,
               title: draft.title,
               content: draft.content,
             },

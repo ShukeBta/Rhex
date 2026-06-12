@@ -14,6 +14,7 @@ import type {
   BoardApplicationSettings,
   BoardTreasurySettings,
   CommentAccessSettings,
+  ForumAccessSettings,
   InteractionGateCondition,
   InteractionGateRule,
   InteractionGateSettings,
@@ -95,6 +96,37 @@ export function mergeCommentAccessSettings(
       guestCanView: input.guestCanView,
       initialVisibleReplies: Math.min(100, Math.max(1, normalizeNonNegativeInteger(input.initialVisibleReplies, 10))),
       loadMode: normalizeCommentLoadMode(input.loadMode),
+    },
+  })
+}
+
+export function resolveForumAccessSettings(options: {
+  appStateJson?: string | null
+  requireLoginToBrowseFallback?: boolean
+} = {}): ForumAccessSettings {
+  const siteSettingsState = readSiteSettingsState(options.appStateJson)
+  const forumAccess = isRecord(siteSettingsState.forumAccess)
+    ? siteSettingsState.forumAccess
+    : {}
+
+  return {
+    requireLoginToBrowse:
+      typeof forumAccess.requireLoginToBrowse === "boolean"
+        ? forumAccess.requireLoginToBrowse
+        : options.requireLoginToBrowseFallback ?? false,
+  }
+}
+
+export function mergeForumAccessSettings(
+  appStateJson: string | null | undefined,
+  input: ForumAccessSettings,
+) {
+  const siteSettingsState = readSiteSettingsState(appStateJson)
+
+  return writeSiteSettingsState(appStateJson, {
+    ...siteSettingsState,
+    forumAccess: {
+      requireLoginToBrowse: Boolean(input.requireLoginToBrowse),
     },
   })
 }

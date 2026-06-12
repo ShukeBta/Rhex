@@ -1250,6 +1250,7 @@ export interface AddonNotificationCreateInput {
   content: string
   relatedType?: AddonNotificationRelatedType
   senderId?: number | null
+  url?: string
 }
 
 export interface AddonNotificationRecord {
@@ -1259,6 +1260,7 @@ export interface AddonNotificationRecord {
   senderId: number | null
   relatedType: AddonNotificationRelatedType
   relatedId: string
+  url: string | null
   title: string
   content: string
   createdAt: string
@@ -2191,6 +2193,7 @@ export interface AddonAsyncWaterfallHookPayloadMap {
       senderId: number | null
       relatedType: string
       relatedId: string
+      url?: string | null
       title: string
       content: string
     }

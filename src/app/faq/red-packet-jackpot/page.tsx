@@ -42,8 +42,12 @@ export default async function RedPacketJackpotFaqPage() {
     `发帖时必须先投入初始 ${settings.pointName}，当前允许范围为 ${settings.postJackpotMinInitialPoints} 到 ${settings.postJackpotMaxInitialPoints}。`,
     `用户首次有效回复会向积分池追加 ${settings.postJackpotReplyIncrementPoints} ${settings.pointName}。`,
     `同一用户后续再次回复时，只会追加“小于 ${settings.postJackpotReplyIncrementPoints}”的随机整数少量积分。`,
-    `用户首次回复按 ${settings.postJackpotHitProbability}% 的基础概率抽奖；再次回复概率会明显下降。`,
-    "已经中过奖的用户，后续再次回复仍然可能继续中奖，但概率会继续衰减。",
+    settings.postJackpotHitProbability >= 100
+      ? "当前聚宝盆基础概率为 100%，有效回复会必中；命中奖励仍按当前积分池随机结算。"
+      : `用户首次回复按 ${settings.postJackpotHitProbability}% 的基础概率抽奖；再次回复概率会明显下降。`,
+    settings.postJackpotHitProbability >= 100
+      ? "已经中过奖的用户，后续再次有效回复仍会继续命中，直到积分池归零。"
+      : "已经中过奖的用户，后续再次回复仍然可能继续中奖，但概率会继续衰减。",
     "楼主自己的回复不会触发追加积分，也不会中奖。",
     "当积分池归零后，聚宝盆结束，后续回复不会再继续加池或抽奖。",
     `每次命中时，奖励会从“当前积分池”里随机结算，最少 1 ${settings.pointName}，最多可直接拿走当前池内全部 ${settings.pointName}。`,

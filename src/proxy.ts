@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server"
 
 import { buildUnauthorizedResponse, getSessionFromRequest, isProtectedPath } from "@/lib/auth-guards"
+import { isForumContentPath } from "@/lib/forum-access-guard"
 import { buildHomeFeedHref, normalizeHomeFeedSort, parseHomeFeedPage, type HomeFeedSort } from "@/lib/home-feed-route"
 import { RHEX_PATHNAME_HEADER } from "@/lib/request-context-headers"
 import { getSessionClearedCookieOptions, getSessionCookieName } from "@/lib/session"
+import { getServerSiteSettings } from "@/lib/site-settings"
 
 const PATH_HOME_FEED_SORTS: Record<string, HomeFeedSort> = {
   "/latest": "latest",
@@ -45,6 +47,19 @@ function nextWithRequestContext(request: NextRequest) {
   })
 }
 
+async function isForumBrowseProtectedPath(pathname: string) {
+  if (!isForumContentPath(pathname)) {
+    return false
+  }
+
+  try {
+    const settings = await getServerSiteSettings()
+    return settings.forumRequireLoginToBrowse
+  } catch {
+    return false
+  }
+}
+
 export async function proxy(request: NextRequest) {
   const legacyHomeFeedRedirect = redirectLegacyHomeFeedPageQuery(request)
   if (legacyHomeFeedRedirect) {
@@ -53,6 +68,7 @@ export async function proxy(request: NextRequest) {
 
   const token = request.cookies.get(getSessionCookieName())?.value
   const protectedPath = isProtectedPath(request.nextUrl.pathname)
+    || await isForumBrowseProtectedPath(request.nextUrl.pathname)
 
   if (!protectedPath) {
     return nextWithRequestContext(request)

@@ -5,6 +5,7 @@ import { revalidateTag, unstable_cache } from "next/cache"
 
 import { renderAddonPostContentHtml } from "@/lib/addon-post-content-render"
 import type { MarkdownEmojiItem } from "@/lib/markdown-emoji"
+import { MARKDOWN_RENDER_OUTPUT_VERSION } from "@/lib/markdown/render"
 import { getConfiguredSiteOrigin, normalizeSiteOrigin } from "@/lib/site-origin-config"
 
 export const POST_SEO_CACHE_TAG = "post-seo"
@@ -184,6 +185,7 @@ export async function renderCachedPostContentHtml(input: {
       contentDigest,
       emojiDigest,
       requestContextDigest,
+      MARKDOWN_RENDER_OUTPUT_VERSION,
     ],
     {
       tags: [POST_RENDERED_CONTENT_CACHE_TAG, getPostRenderedContentCacheTag(input.postId)],

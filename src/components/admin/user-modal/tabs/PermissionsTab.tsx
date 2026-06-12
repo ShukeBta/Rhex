@@ -27,7 +27,7 @@ export function PermissionsTab({
 }) {
   const canPromoteModerator = activeUser.role === "USER"
   const canSetAdmin = activeUser.role !== "ADMIN"
-  const canDemote = activeUser.role !== "USER"
+  const canDemote = activeUser.role === "MODERATOR"
 
   return (
     <div className="flex flex-col gap-4">

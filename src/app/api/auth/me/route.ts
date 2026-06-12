@@ -52,6 +52,7 @@ export const GET = createRouteHandler(async ({ request }) => {
           levelName: presentedUser?.levelName ?? null,
           levelColor: presentedUser?.levelColor ?? null,
           levelIcon: presentedUser?.levelIcon ?? null,
+          displayedBadges: presentedUser?.displayedBadges ?? displayedBadges,
           points: user.points,
           vipLevel: user.vipLevel,
           vipExpiresAt: user.vipExpiresAt?.toString?.() ?? null,

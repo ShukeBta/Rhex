@@ -68,6 +68,7 @@ interface PostRedPacketAllocationSnapshot {
 
 const JACKPOT_REPEAT_REPLY_PROBABILITY_FACTOR = 0.35
 const JACKPOT_REPEAT_WINNER_PROBABILITY_FACTOR = 0.5
+const JACKPOT_GUARANTEED_HIT_PROBABILITY = 100
 
 function parseRewardPoolConfigFromMeta(value: unknown) {
   return parseStoredPostRewardPoolConfig(value)
@@ -100,6 +101,18 @@ function clampJackpotProbability(value: number) {
   }
 
   return clampSafeInteger(normalized, 1, 100) ?? 1
+}
+
+function isGuaranteedJackpotProbability(value: number) {
+  return clampJackpotProbability(value) >= JACKPOT_GUARANTEED_HIT_PROBABILITY
+}
+
+function normalizeRuntimeJackpotProbability(value: number) {
+  if (!Number.isFinite(value)) {
+    return 0
+  }
+
+  return Math.min(100, Math.max(0, Number(value.toFixed(2))))
 }
 
 export function parsePostRewardPoolConfigFromContent(rawContent: string) {
@@ -248,7 +261,12 @@ export function buildJackpotClaimReason(params: { amount: number; pointName: str
 }
 
 export function shouldHitJackpot(probability: number) {
-  return randomInt(1, 101) <= probability
+  const normalizedProbability = normalizeRuntimeJackpotProbability(probability)
+  if (normalizedProbability >= JACKPOT_GUARANTEED_HIT_PROBABILITY) {
+    return true
+  }
+
+  return randomInt(0, 10_000) < normalizedProbability * 100
 }
 
 export function allocateJackpotAmount(poolPoints: number) {
@@ -281,13 +299,15 @@ export function resolveJackpotReplyOutcome(params: {
     ? params.baseHitProbability
     : params.baseHitProbability * JACKPOT_REPEAT_REPLY_PROBABILITY_FACTOR
 
-  if (params.priorWinCount > 0) {
+  if (params.priorWinCount > 0 && !isGuaranteedJackpotProbability(params.baseHitProbability)) {
     hitProbability *= JACKPOT_REPEAT_WINNER_PROBABILITY_FACTOR ** params.priorWinCount
   }
 
   return {
     depositedPoints,
-    hitProbability: clampJackpotProbability(hitProbability),
+    hitProbability: isGuaranteedJackpotProbability(params.baseHitProbability)
+      ? JACKPOT_GUARANTEED_HIT_PROBABILITY
+      : clampJackpotProbability(hitProbability),
   }
 }
 

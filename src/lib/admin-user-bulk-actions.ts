@@ -185,20 +185,10 @@ async function countDeletionBlockers(userId: number) {
 
 async function runRoleBulkAction(actor: AdminActor, users: BulkUserRecord[], role: UserRole, skippedReasons: Map<string, number>) {
   const targetUsers: BulkUserRecord[] = []
-  const currentAdminCount = await prisma.user.count({ where: { role: UserRole.ADMIN } })
-  const demotingAdminIds = role !== UserRole.ADMIN
-    ? users.filter((user) => user.role === UserRole.ADMIN && user.id !== actor.id).map((user) => user.id)
-    : []
-  const canDemoteAllRequestedAdmins = role === UserRole.ADMIN || currentAdminCount - demotingAdminIds.length >= 1
 
   for (const user of users) {
-    if (user.id === actor.id && role !== UserRole.ADMIN) {
-      pushSkipped(skippedReasons, "不能把当前登录管理员移出管理员组")
-      continue
-    }
-
-    if (user.role === UserRole.ADMIN && role !== UserRole.ADMIN && !canDemoteAllRequestedAdmins) {
-      pushSkipped(skippedReasons, "至少需要保留一个管理员账号")
+    if (user.role === UserRole.ADMIN && role !== UserRole.ADMIN) {
+      pushSkipped(skippedReasons, user.id === actor.id ? "不能把当前登录管理员移出管理员组" : "不能批量降级管理员账号")
       continue
     }
 

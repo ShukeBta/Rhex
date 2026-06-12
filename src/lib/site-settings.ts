@@ -22,7 +22,7 @@ import { parseMarkdownEmojiMapJson } from "@/lib/markdown-emoji"
 import { normalizeCommentLoadMode } from "@/lib/comment-load-mode"
 import { normalizePostListLoadMode } from "@/lib/post-list-load-mode"
 import { normalizePostListDisplayMode } from "@/lib/post-list-display"
-import { resolveAnonymousPostSettings, resolveAttachmentFeatureSettings, resolveAuthProviderSettings, resolveAvatarChangePointCostSettings, resolveBoardApplicationSettings, resolveBoardTreasurySettings, resolveCheckInMakeUpPriceSettings, resolveCheckInRewardSettings, resolveCheckInStreakSettings, resolveCommentAccessSettings, resolveEmailBusinessSwitchSettings, resolveFooterCopyrightSettings, resolveHomeFeedPostListLoadSettings, resolveHomeHotFeedSettings, resolveHomeSidebarAnnouncementSettings, resolveImageWatermarkSettings, resolveInteractionGateSettings, resolveIntroductionChangePointCostSettings, resolveInviteCodePurchasePriceSettings, resolveLeftSidebarDisplaySettings, resolveLeftSidebarHomeSettings, resolveLeftSidebarNavigationSettings, resolveMarkdownImageUploadSettings, resolveMentionRecommendationSettings, resolveMessageMediaSettings, resolveNicknameChangePointCostSettings, resolvePostContentLengthSettings, resolvePostJackpotSettings, resolvePostPageSizeSettings, resolvePostRedPacketSettings, resolvePostSlugGenerationSettings, resolveRegisterEmailWhitelistSettings, resolveRegisterInviteCodeHelpSettings, resolveRegisterNicknameLengthSettings, resolveRegisterPasswordPolicySettings, resolveRegistrationEmailTemplateSettings, resolveRegistrationRewardSettings, resolveSiteBrandingSettings, resolveSiteChatSettings, resolveSiteSecuritySettings, resolveSmsProviderSettings, resolveThemeCustomizationSettingsFromAppState, resolveUploadObjectStorageSettings, resolveUserProfileDisplaySettings, resolveUsernameSensitiveWordSettings, resolveVipLevelIconSettings, resolveVipNameColorSettings } from "@/lib/site-settings-app-state"
+import { resolveAnonymousPostSettings, resolveAttachmentFeatureSettings, resolveAuthProviderSettings, resolveAvatarChangePointCostSettings, resolveBoardApplicationSettings, resolveBoardTreasurySettings, resolveCheckInMakeUpPriceSettings, resolveCheckInRewardSettings, resolveCheckInStreakSettings, resolveCommentAccessSettings, resolveEmailBusinessSwitchSettings, resolveFooterCopyrightSettings, resolveForumAccessSettings, resolveHomeFeedPostListLoadSettings, resolveHomeHotFeedSettings, resolveHomeSidebarAnnouncementSettings, resolveImageWatermarkSettings, resolveInteractionGateSettings, resolveIntroductionChangePointCostSettings, resolveInviteCodePurchasePriceSettings, resolveLeftSidebarDisplaySettings, resolveLeftSidebarHomeSettings, resolveLeftSidebarNavigationSettings, resolveMarkdownImageUploadSettings, resolveMentionRecommendationSettings, resolveMessageMediaSettings, resolveNicknameChangePointCostSettings, resolvePostContentLengthSettings, resolvePostJackpotSettings, resolvePostPageSizeSettings, resolvePostRedPacketSettings, resolvePostSlugGenerationSettings, resolveRegisterEmailWhitelistSettings, resolveRegisterInviteCodeHelpSettings, resolveRegisterNicknameLengthSettings, resolveRegisterPasswordPolicySettings, resolveRegistrationEmailTemplateSettings, resolveRegistrationRewardSettings, resolveSiteBrandingSettings, resolveSiteChatSettings, resolveSiteSecuritySettings, resolveSmsProviderSettings, resolveThemeCustomizationSettingsFromAppState, resolveUploadObjectStorageSettings, resolveUserProfileDisplaySettings, resolveUsernameSensitiveWordSettings, resolveVipLevelIconSettings, resolveVipNameColorSettings } from "@/lib/site-settings-app-state"
 import { resolveAuthPageShowcaseSettings } from "@/lib/site-settings-app-state"
 import { resolveAuthProviderSensitiveConfig, resolveCaptchaSensitiveConfig, resolveSmsSensitiveConfig, resolveUploadStorageSensitiveConfig } from "@/lib/site-settings-sensitive-state"
 import { resolveSiteSearchSettings } from "@/lib/site-search-settings"
@@ -124,6 +124,9 @@ function normalizeLegacyServerSiteSettings(data: ServerSiteSettingsData): Server
     redeemCodeHelpUrl: typeof data.redeemCodeHelpUrl === "string"
       ? data.redeemCodeHelpUrl
       : defaults.redeemCodeHelpUrl,
+    forumRequireLoginToBrowse: typeof data.forumRequireLoginToBrowse === "boolean"
+      ? data.forumRequireLoginToBrowse
+      : defaults.forumRequireLoginToBrowse,
     checkInMakeUpOldestDayLimit: typeof data.checkInMakeUpOldestDayLimit === "number" && Number.isFinite(data.checkInMakeUpOldestDayLimit)
       ? Math.max(0, Math.floor(data.checkInMakeUpOldestDayLimit))
       : defaults.checkInMakeUpOldestDayLimit,
@@ -317,6 +320,10 @@ function mapSiteSettings(record: SiteSettingsRecordData, tippingGifts: SiteTippi
     guestCanViewFallback: true,
     initialVisibleRepliesFallback: 10,
     loadModeFallback: normalizeCommentLoadMode(undefined),
+  })
+  const forumAccessSettings = resolveForumAccessSettings({
+    appStateJson: record.appStateJson,
+    requireLoginToBrowseFallback: false,
   })
   const mentionRecommendationSettings = resolveMentionRecommendationSettings({
     appStateJson: record.appStateJson,
@@ -534,6 +541,7 @@ function mapSiteSettings(record: SiteSettingsRecordData, tippingGifts: SiteTippi
     commentEditableMinutes: normalizePositiveInteger(record.commentEditableMinutes, 5),
     godCommentAutoLikeThreshold: normalizePositiveInteger(record.godCommentAutoLikeThreshold, DEFAULT_GOD_COMMENT_AUTO_LIKE_THRESHOLD),
     guestCanViewComments: commentAccessSettings.guestCanView,
+    forumRequireLoginToBrowse: forumAccessSettings.requireLoginToBrowse,
     commentInitialVisibleReplies: commentAccessSettings.initialVisibleReplies,
     mentionRecommendations: mentionRecommendationSettings,
     anonymousPostEnabled: anonymousPostSettings.enabled,

@@ -220,7 +220,7 @@ async function tryClaimPostJackpot(input: {
       replyCount,
       priorWinCount,
       baseIncrementPoints: rewardConfig.replyIncrementPoints,
-      baseHitProbability: rewardConfig.hitProbability,
+      baseHitProbability: settings.postJackpotHitProbability,
     })
     const preparedIncrement = await prepareScopedPointDelta({
       scopeKey: "JACKPOT_REPLY_INCREMENT",
@@ -422,7 +422,7 @@ export async function getPostRedPacketSummary(postId: string, currentUserId?: nu
     status: packet.status,
     jackpotInitialPoints: rewardConfig.mode === "JACKPOT" ? rewardConfig.initialPoints : undefined,
     jackpotReplyIncrementPoints: rewardConfig.mode === "JACKPOT" ? rewardConfig.replyIncrementPoints : undefined,
-    jackpotHitProbability: rewardConfig.mode === "JACKPOT" ? rewardConfig.hitProbability : undefined,
+    jackpotHitProbability: rewardConfig.mode === "JACKPOT" ? settings.postJackpotHitProbability : undefined,
     currentUserPoints: currentUser?.points ?? 0,
     currentUserClaimed: Boolean(currentUserClaim?._count._all),
     currentUserClaimAmount: currentUserClaim?._sum.amount ?? undefined,

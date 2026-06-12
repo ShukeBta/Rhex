@@ -143,6 +143,21 @@ export function AdminLogCenter({ data }: AdminLogCenterProps) {
     return `/admin?${query.toString()}`
   }
 
+  function buildLogTabHref(logSubTab: AdminLogCenterResult["activeTab"]) {
+    const isAdminLog = logSubTab === "admin"
+    const isCheckInLog = logSubTab === "checkins"
+    const isPointLog = logSubTab === "points"
+    const isUploadLog = logSubTab === "uploads"
+
+    return buildHref({
+      logSubTab,
+      logPage: "1",
+      logAction: isAdminLog || isCheckInLog ? filters.action : "ALL",
+      logChangeType: isPointLog ? filters.changeType : "ALL",
+      logBucketType: isUploadLog ? filters.bucketType : "ALL",
+    })
+  }
+
   function buildPageHref(page: number) {
     return buildHref({ logPage: String(page) })
   }
@@ -157,6 +172,8 @@ export function AdminLogCenter({ data }: AdminLogCenterProps) {
             label: card.label,
             value: card.count,
             icon: <Icon className="h-4 w-4" />,
+            href: buildLogTabHref(card.key),
+            active: card.key === data.activeTab,
           }
         })}
       />
@@ -174,7 +191,7 @@ export function AdminLogCenter({ data }: AdminLogCenterProps) {
               return (
                 <Link
                   key={item.key}
-                  href={buildHref({ logSubTab: item.key, logPage: "1" })}
+                  href={buildLogTabHref(item.key)}
                   className={cn(
                     buttonVariants({ variant: active ? "default" : "outline", size: "default" }),
                     "rounded-full px-4 text-xs"

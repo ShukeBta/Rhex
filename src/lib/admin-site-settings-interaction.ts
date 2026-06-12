@@ -7,6 +7,7 @@ import {
   mergeAnonymousPostSettings,
   mergeBoardTreasurySettings,
   mergeCommentAccessSettings,
+  mergeForumAccessSettings,
   mergeHomeHotFeedSettings,
   mergeInteractionGateSettings,
   mergeMentionRecommendationSettings,
@@ -18,6 +19,7 @@ import {
   resolveAnonymousPostSettings,
   resolveBoardTreasurySettings,
   resolveCommentAccessSettings,
+  resolveForumAccessSettings,
   resolveHomeHotFeedSettings,
   normalizeMentionRecommendationUsernames,
   resolvePostContentLengthSettings,
@@ -48,6 +50,13 @@ export async function updateInteractionSiteSettingsSection(existing: SiteSetting
       ),
     )
     const commentLoadMode = normalizeCommentLoadMode(body.commentLoadMode, existingCommentAccessSettings.loadMode)
+    const existingForumAccessSettings = resolveForumAccessSettings({
+      appStateJson: existing.appStateJson,
+      requireLoginToBrowseFallback: false,
+    })
+    const forumRequireLoginToBrowse = body.forumRequireLoginToBrowse === undefined
+      ? existingForumAccessSettings.requireLoginToBrowse
+      : Boolean(body.forumRequireLoginToBrowse)
     const mentionDefaultUsernames = normalizeMentionRecommendationUsernames(body.mentionDefaultUsernames)
     const postEditableMinutes = normalizePostEditableMinutes(readOptionalNumberField(body, "postEditableMinutes"), existing.postEditableMinutes)
     const commentEditableMinutes = Math.max(0, readOptionalNumberField(body, "commentEditableMinutes") ?? existing.commentEditableMinutes)
@@ -213,7 +222,10 @@ export async function updateInteractionSiteSettingsSection(existing: SiteSetting
       initialVisibleReplies: commentInitialVisibleReplies,
       loadMode: commentLoadMode,
     })
-    const appStateWithMentionRecommendations = mergeMentionRecommendationSettings(appStateWithCommentAccess, {
+    const appStateWithForumAccess = mergeForumAccessSettings(appStateWithCommentAccess, {
+      requireLoginToBrowse: forumRequireLoginToBrowse,
+    })
+    const appStateWithMentionRecommendations = mergeMentionRecommendationSettings(appStateWithForumAccess, {
       defaultUsernames: mentionDefaultUsernames,
     })
     const appStateWithAnonymousPost = mergeAnonymousPostSettings(appStateWithMentionRecommendations, {

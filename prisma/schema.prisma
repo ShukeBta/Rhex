@@ -1386,6 +1386,7 @@ model Notification {
   senderId    Int?
   relatedType RelatedType
   relatedId   String
+  url         String?
   title       String
   content     String
   isRead      Boolean          @default(false)

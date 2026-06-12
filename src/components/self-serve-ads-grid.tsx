@@ -12,6 +12,9 @@ type SelfServeAdsGridProps = {
   variant?: "sidebar" | "page"
 }
 
+const IMAGE_AD_ASPECT_CLASS_NAME = "aspect-[16/3]"
+const IMAGE_AD_IMAGE_SIZES = "(max-width: 768px) calc(100vw - 40px), (max-width: 1280px) 50vw, 560px"
+
 function buildPurchaseHref(slotType: "IMAGE" | "TEXT", slotIndex: number) {
   return `/funs/self-serve-ads/purchase?slotType=${slotType}&slotIndex=${slotIndex}`
 }
@@ -50,8 +53,8 @@ function ImageAdSlot({ item, placeholderLabel, isPage }: { item: SelfServeAdItem
       <Link
         href={buildPurchaseHref("IMAGE", item.slotIndex)}
         className={isPage
-          ? "flex min-h-[116px] w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-background px-4 py-5 text-sm font-medium text-muted-foreground transition hover:border-foreground/20 hover:text-foreground"
-          : "flex h-[52px] w-full items-center justify-center rounded-xl border border-dashed border-border bg-background text-xs font-medium text-muted-foreground transition hover:border-foreground/20 hover:text-foreground"}
+          ? `flex ${IMAGE_AD_ASPECT_CLASS_NAME} w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-background px-4 py-5 text-sm font-medium text-muted-foreground transition hover:border-foreground/20 hover:text-foreground`
+          : `flex ${IMAGE_AD_ASPECT_CLASS_NAME} w-full items-center justify-center rounded-xl border border-dashed border-border bg-background text-xs font-medium text-muted-foreground transition hover:border-foreground/20 hover:text-foreground`}
       >
         <span>{placeholderLabel || "点击购买"}</span>
         {isPage ? <span className="text-xs font-normal">图片广告位 #{item.slotIndex + 1}</span> : null}
@@ -68,15 +71,15 @@ function ImageAdSlot({ item, placeholderLabel, isPage }: { item: SelfServeAdItem
         ? "group block overflow-hidden rounded-xl border border-border bg-background transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5"
         : "group block overflow-hidden rounded-xl border border-border bg-background transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5"}
     >
-      <div className={isPage ? "h-[92px] w-full bg-muted/20" : "h-[58px] w-full bg-muted/20"}>
+      <div className={`relative ${IMAGE_AD_ASPECT_CLASS_NAME} w-full bg-muted/20`}>
         {item.imageUrl ? (
           <Image
             src={item.imageUrl}
             alt={`图片广告位 ${item.slotIndex + 1}`}
-            width={isPage ? 640 : 320}
-            height={isPage ? 92 : 58}
+            fill
+            sizes={isPage ? IMAGE_AD_IMAGE_SIZES : "320px"}
             unoptimized
-            className="h-full w-full object-cover"
+            className="object-contain"
           />
         ) : null}
       </div>

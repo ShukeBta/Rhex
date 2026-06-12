@@ -39,6 +39,11 @@ export function findApprovedUserVerification(userId: number) {
       type: {
         select: verificationApplicationTypeSelect,
       },
+      user: {
+        select: {
+          username: true,
+        },
+      },
     },
   })
 }

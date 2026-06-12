@@ -5,6 +5,7 @@ import { countUnreadNotifications, findCommentsWithPostByIds, findNotificationsB
 import { decodeTimestampCursor, encodeTimestampCursor } from "@/lib/cursor-pagination"
 import { formatMonthDayTime } from "@/lib/formatters"
 import { getCachedUnreadNotificationCount } from "@/lib/notification-redis-cache"
+import { normalizeNotificationUrl } from "@/lib/notification-url"
 import { getAnonymousMaskDisplayIdentity } from "@/lib/post-anonymous"
 import { getPostCommentPath, getPostPath } from "@/lib/post-links"
 import { getSiteSettings } from "@/lib/site-settings"
@@ -74,12 +75,18 @@ async function preloadNotificationTargets(notifications: NotificationCursorRows)
 }
 
 async function resolveNotificationUrl(
+  customUrl: string | null | undefined,
   relatedType: RelatedType,
   relatedId: string,
   settings: Awaited<ReturnType<typeof getSiteSettings>>,
   targets: Awaited<ReturnType<typeof preloadNotificationTargets>>,
   rootCommentPageCache: Map<string, Promise<number>>,
 ) {
+  const normalizedCustomUrl = normalizeNotificationUrl(customUrl)
+  if (normalizedCustomUrl) {
+    return normalizedCustomUrl
+  }
+
   if (relatedType === RelatedType.POST) {
     const post = targets.postMap.get(relatedId)
 
@@ -164,6 +171,7 @@ export async function getUserNotifications(
     const rootCommentPageCache = new Map<string, Promise<number>>()
     const relatedUrls = await Promise.all(
       notifications.map((notification) => resolveNotificationUrl(
+        notification.url,
         notification.relatedType,
         notification.relatedId,
         settings,

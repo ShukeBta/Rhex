@@ -49,6 +49,8 @@ const LINK_CANDIDATE_PATTERN = new RegExp(
   "giu",
 )
 
+export const MARKDOWN_RENDER_OUTPUT_VERSION = "raw-html-sanitize-2026-06-12-image-flow"
+
 type CalloutType = (typeof CALLOUT_TYPES)[number]
 const MARKDOWN_RENDERER_CACHE_LIMIT = 8
 const markdownRendererCache = new Map<string, MarkdownIt>()
@@ -137,7 +139,130 @@ function cloneMarkdownToken(Token: MarkdownTokenConstructor, token: MarkdownToke
   nextToken.markup = token.markup
   nextToken.info = token.info
   nextToken.level = token.level
+  nextToken.children = token.children ? token.children.map((child) => cloneMarkdownToken(Token, child)) : null
   return nextToken
+}
+
+function createParagraphToken(Token: MarkdownTokenConstructor, nesting: 1 | -1, level: number) {
+  const token = new Token(nesting === 1 ? "paragraph_open" : "paragraph_close", "p", nesting)
+  token.level = level
+  return token
+}
+
+function createInlineToken(Token: MarkdownTokenConstructor, children: MarkdownToken[], level: number) {
+  const token = new Token("inline", "", 0)
+  token.children = children
+  token.content = children.map((child) => child.content).join("")
+  token.level = level
+  return token
+}
+
+function trimTextTokenEdges(Token: MarkdownTokenConstructor, tokens: MarkdownToken[]) {
+  const nextTokens = tokens.map((token) => cloneMarkdownToken(Token, token))
+
+  for (const token of nextTokens) {
+    if (token.type === "text") {
+      token.content = token.content.replace(/^\s+/, "")
+      break
+    }
+  }
+
+  for (let index = nextTokens.length - 1; index >= 0; index -= 1) {
+    const token = nextTokens[index]
+    if (token?.type === "text") {
+      token.content = token.content.replace(/\s+$/, "")
+      break
+    }
+  }
+
+  return nextTokens.filter((token) => token.type !== "text" || token.content.length > 0)
+}
+
+function isImageToken(token: MarkdownToken | undefined) {
+  return token?.type === "image"
+}
+
+function isLinkedImageTokenSequence(tokens: MarkdownToken[], index: number) {
+  return (
+    tokens[index]?.type === "link_open"
+    && tokens[index + 1]?.type === "image"
+    && tokens[index + 2]?.type === "link_close"
+  )
+}
+
+function splitInlineChildrenByImage(Token: MarkdownTokenConstructor, children: MarkdownToken[]) {
+  const segments: MarkdownToken[][] = []
+  let currentSegment: MarkdownToken[] = []
+  let hasImageSegment = false
+
+  function pushCurrentSegment() {
+    const trimmedSegment = trimTextTokenEdges(Token, currentSegment)
+    if (trimmedSegment.length > 0) {
+      segments.push(trimmedSegment)
+    }
+    currentSegment = []
+  }
+
+  for (let index = 0; index < children.length; index += 1) {
+    if (isLinkedImageTokenSequence(children, index)) {
+      pushCurrentSegment()
+      segments.push([
+        cloneMarkdownToken(Token, children[index]),
+        cloneMarkdownToken(Token, children[index + 1]),
+        cloneMarkdownToken(Token, children[index + 2]),
+      ])
+      hasImageSegment = true
+      index += 2
+      continue
+    }
+
+    const child = children[index]
+    if (isImageToken(child)) {
+      pushCurrentSegment()
+      segments.push([cloneMarkdownToken(Token, child)])
+      hasImageSegment = true
+      continue
+    }
+
+    currentSegment.push(child)
+  }
+
+  pushCurrentSegment()
+
+  return hasImageSegment && segments.length > 1 ? segments : null
+}
+
+function splitMixedImageParagraphs(markdown: MarkdownItWithLinkifyCore) {
+  markdown.core.ruler.after("inline", "split_mixed_image_paragraphs", (state) => {
+    for (let index = 0; index < state.tokens.length - 2; index += 1) {
+      const paragraphOpenToken = state.tokens[index]
+      const inlineToken = state.tokens[index + 1]
+      const paragraphCloseToken = state.tokens[index + 2]
+
+      if (
+        paragraphOpenToken?.type !== "paragraph_open"
+        || inlineToken?.type !== "inline"
+        || paragraphCloseToken?.type !== "paragraph_close"
+        || !inlineToken.children?.length
+      ) {
+        continue
+      }
+
+      const segments = splitInlineChildrenByImage(state.Token, inlineToken.children)
+      if (!segments) {
+        continue
+      }
+
+      const replacement = segments.flatMap((segment) => [
+        createParagraphToken(state.Token, 1, paragraphOpenToken.level),
+        createInlineToken(state.Token, segment, inlineToken.level),
+        createParagraphToken(state.Token, -1, paragraphCloseToken.level),
+      ])
+
+      state.tokens.splice(index, 3, ...replacement)
+      index += replacement.length - 1
+    }
+  })
 }
 
 function trimAutoLinkCandidate(input: string) {
@@ -779,6 +904,10 @@ function sanitizeMarkdownHtmlLine(line: string, placeholders: EscapedHtmlPlaceho
       return "<u>"
     }
 
+    if (tagName === "a") {
+      return createEscapedHtmlPlaceholder(raw, placeholders)
+    }
+
     if (tagName === "span") {
       const classMatch = rawAttributes.match(/\bclass\s*=\s*(["'])([^"']+)\1/i)
       const className = classMatch?.[2]?.trim()
@@ -846,6 +975,7 @@ function createMarkdownRenderer(emojiItems: MarkdownEmojiItem[]) {
   })
   const mdWithLinkify = md as MarkdownItWithLinkifyCore
   mdWithLinkify.linkify.set({ fuzzyLink: false })
+  splitMixedImageParagraphs(mdWithLinkify)
   fixCjkAutoLinkBoundaries(mdWithLinkify)
 
   md.use(markdownItAbbr)

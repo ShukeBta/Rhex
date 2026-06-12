@@ -1,5 +1,6 @@
 import { prisma } from "@/db/client"
 import { type NotificationType, type Prisma, type RelatedType } from "@/db/types"
+import { normalizeNotificationUrl } from "@/lib/notification-url"
 
 export type NotificationWriteClient = Prisma.TransactionClient | typeof prisma
 
@@ -9,6 +10,7 @@ export interface NotificationDraft {
   senderId?: number | null
   relatedType: RelatedType
   relatedId: string
+  url?: string | null
   title: string
   content: string
 }
@@ -21,6 +23,7 @@ function normalizeNotificationDraft(draft: NotificationDraft) {
   return {
     ...draft,
     senderId: draft.senderId ?? null,
+    url: normalizeNotificationUrl(draft.url),
   }
 }
 

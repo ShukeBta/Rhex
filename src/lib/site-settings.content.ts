@@ -6,6 +6,7 @@ export interface SiteSettingsContentData {
   commentEditableMinutes: number
   godCommentAutoLikeThreshold: number
   guestCanViewComments: boolean
+  forumRequireLoginToBrowse: boolean
   commentInitialVisibleReplies: number
   mentionRecommendations: MentionRecommendationSettings
   anonymousPostEnabled: boolean

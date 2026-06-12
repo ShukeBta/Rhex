@@ -29,6 +29,7 @@ export async function createAddonNotification(
     senderId: input.senderId ?? null,
     relatedType: input.relatedType ?? "ANNOUNCEMENT",
     relatedId: normalizeOptionalString(input.relatedId),
+    url: input.url ?? null,
     title: normalizeOptionalString(input.title),
     content: normalizeOptionalString(input.content),
   })

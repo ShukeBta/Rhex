@@ -70,8 +70,9 @@ const adminSettingsSectionDetails: Record<
   },
   interaction: {
     label: "互动与热度",
-    defaultSubTab: "comments",
+    defaultSubTab: "access",
     subTabs: [
+      { key: "access", label: "访问控制" },
       { key: "comments", label: "评论展示" },
       { key: "mentions", label: "@ 推荐" },
       { key: "chat", label: "全站聊天室" },
@@ -120,6 +121,7 @@ const legacySectionAliases: Partial<Record<AdminSettingsSectionKey, { section: k
 
 const subTabAliases: Partial<Record<keyof typeof adminSettingsSectionDetails, Record<string, string>>> = {
   interaction: {
+    "forum-access": "access",
     "comment-tip": "comments",
     messages: "chat",
     "site-chat": "chat",

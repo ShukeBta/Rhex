@@ -6,6 +6,7 @@ import type { SettingsPageData } from "@/app/settings/settings-page-loader"
 
 export function InviteSettingsSection({ data }: { data: SettingsPageData }) {
   const { profile, settings, invitePath, inviteCodePrice, inviteCodePriceDescription } = data
+  const showInviteLink = !settings.registrationRequireInviteCode
 
   return (
     <Card>
@@ -28,15 +29,17 @@ export function InviteSettingsSection({ data }: { data: SettingsPageData }) {
           </div>
         </div>
 
-        <div className="space-y-3 rounded-xl border border-border px-4 py-4 text-sm">
-          <div>
-            <p className="font-medium">我的邀请链接</p>
-            <div className="mt-2 break-all text-muted-foreground">
-              <InviteLinkCopyButton path={invitePath} />
+        {showInviteLink ? (
+          <div className="space-y-3 rounded-xl border border-border px-4 py-4 text-sm">
+            <div>
+              <p className="font-medium">我的邀请链接</p>
+              <div className="mt-2 break-all text-muted-foreground">
+                <InviteLinkCopyButton path={invitePath} />
+              </div>
+              <p className="mt-2 text-xs leading-6 text-muted-foreground">把这个链接发给好友，对方注册时会自动带上你的邀请信息。</p>
             </div>
-            <p className="mt-2 text-xs leading-6 text-muted-foreground">把这个链接发给好友，对方注册时会自动带上你的邀请信息。</p>
           </div>
-        </div>
+        ) : null}
 
         <InviteCodePurchaseCard
           enabled={settings.inviteCodePurchaseEnabled}

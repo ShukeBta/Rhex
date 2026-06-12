@@ -219,6 +219,29 @@ export function InboxRealtimeProvider({
   }, [currentUserId])
 
   useEffect(() => {
+    const nextCounts = {
+      unreadMessageCount: messageEnabled ? initialUnreadMessageCount : 0,
+      unreadNotificationCount: initialUnreadNotificationCount,
+    }
+
+    unreadCountsRef.current = nextCounts
+    setUnreadMessageCount((current) =>
+      current === nextCounts.unreadMessageCount
+        ? current
+        : nextCounts.unreadMessageCount,
+    )
+    setUnreadNotificationCount((current) =>
+      current === nextCounts.unreadNotificationCount
+        ? current
+        : nextCounts.unreadNotificationCount,
+    )
+  }, [
+    initialUnreadMessageCount,
+    initialUnreadNotificationCount,
+    messageEnabled,
+  ])
+
+  useEffect(() => {
     unreadCountsRef.current = {
       unreadMessageCount,
       unreadNotificationCount,

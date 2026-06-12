@@ -281,6 +281,10 @@ export interface CommentAccessSettings {
   loadMode: CommentLoadMode
 }
 
+export interface ForumAccessSettings {
+  requireLoginToBrowse: boolean
+}
+
 export interface SiteChatSettings {
   enabled: boolean
 }

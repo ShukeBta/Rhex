@@ -134,6 +134,23 @@ export function AdminInteractionSettingsForm({
 
   return (
     <>
+      {activeSubTab === "access" ? (
+        <div className="rounded-xl border border-border p-5 space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold">论坛访问控制</h3>
+            <p className="mt-1 text-xs leading-6 text-muted-foreground">控制游客是否可以直接浏览论坛内容页。登录、注册、帮助、公告和静态资源不受影响。</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <AdminBooleanSelectField
+              label="必须登录后浏览论坛内容"
+              checked={draft.forumRequireLoginToBrowse}
+              onChange={(value) => updateDraftField("forumRequireLoginToBrowse", value)}
+              description="开启后，游客访问首页、列表、帖子、版块、节点、标签、搜索和用户页时会跳转登录页。"
+            />
+          </div>
+        </div>
+      ) : null}
+
       {activeSubTab === "comments" ? (
         <div className="rounded-xl border border-border p-5 space-y-4">
           <div>

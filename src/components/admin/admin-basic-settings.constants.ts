@@ -85,6 +85,7 @@ export const INTERNAL_SETTING_TABS: Record<
     { key: "smtp", label: "SMTP 邮件" },
   ],
   interaction: [
+    { key: "access", label: "访问控制" },
     { key: "comments", label: "评论展示" },
     { key: "mentions", label: "@ 推荐" },
     { key: "chat", label: "全站聊天室" },
@@ -104,7 +105,7 @@ export const INTERNAL_SETTING_TABS: Record<
 const INTERNAL_SETTING_TAB_DEFAULT: Record<AdminBasicSettingsMode, string> = {
   profile: "branding",
   registration: "invite",
-  interaction: "comments",
+  interaction: "access",
   "board-applications": "general",
 }
 
@@ -114,6 +115,10 @@ export function resolveInternalSettingTab(
 ) {
   if (mode === "interaction" && initialSubTab === "comment-tip") {
     return "comments"
+  }
+
+  if (mode === "interaction" && initialSubTab === "forum-access") {
+    return "access"
   }
 
   if (mode === "interaction" && (initialSubTab === "messages" || initialSubTab === "site-chat")) {

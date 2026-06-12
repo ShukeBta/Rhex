@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 import { InboxRealtimeProvider } from "@/components/inbox-realtime-provider"
 import type { SiteSettingsData } from "@/lib/site-settings.types"
-import type { PublicUserRoleBadge } from "@/lib/user-presentation"
+import type { PublicUserDisplayedBadge, PublicUserRoleBadge } from "@/lib/user-presentation"
 import type { UserSurfaceSnapshot } from "@/lib/user-surface"
 
 export interface CurrentUserClient {
@@ -22,6 +22,7 @@ export interface CurrentUserClient {
   levelName: string | null
   levelColor: string | null
   levelIcon: string | null
+  displayedBadges?: PublicUserDisplayedBadge[]
   points: number
   vipLevel: number | null
   vipExpiresAt: string | null
@@ -176,7 +177,7 @@ export function CurrentUserInboxProvider({
 
   return (
     <InboxRealtimeProvider
-      key={`${user?.id ?? "guest"}:${surface?.unreadMessageCount ?? 0}:${surface?.unreadNotificationCount ?? 0}`}
+      key={user?.id ?? "guest"}
       currentUserId={user?.id ?? null}
       initialUnreadMessageCount={messageEnabled ? surface?.unreadMessageCount ?? 0 : 0}
       initialUnreadNotificationCount={surface?.unreadNotificationCount ?? 0}

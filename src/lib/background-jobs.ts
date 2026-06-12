@@ -40,6 +40,7 @@ export interface BackgroundJobPayloadMap {
     senderId?: number | null
     relatedType: RelatedType
     relatedId: string
+    url?: string | null
     title: string
     content: string
   }
@@ -50,6 +51,7 @@ export interface BackgroundJobPayloadMap {
       senderId?: number | null
       relatedType: RelatedType
       relatedId: string
+      url?: string | null
       title: string
       content: string
     }>

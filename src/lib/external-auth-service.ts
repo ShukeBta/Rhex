@@ -2,6 +2,7 @@ import { compare, hashSync } from "bcryptjs"
 
 import type { NextResponse } from "next/server"
 
+import type { UserStatus } from "@/db/types"
 import {
   createExternalAuthUserRecord,
   createUserLoginLogEntry,
@@ -27,6 +28,7 @@ import { applyPointDelta, prepareScopedPointDelta } from "@/lib/point-center"
 import { isPrismaUniqueConstraintError } from "@/lib/prisma-errors"
 import { getRequestIp } from "@/lib/request-ip"
 import { createSessionToken, getSessionCookieName, getSessionCookieOptions } from "@/lib/session"
+import { resolveEffectiveUserStatus } from "@/lib/user-status"
 import {
   buildExternalAuthMetadataJson,
   buildPendingExternalAuthState,
@@ -50,6 +52,8 @@ import { executeAddonActionHook } from "@/addons-host/runtime/hooks"
 interface AuthenticatedUserSummary {
   id: number
   username: string
+  status?: UserStatus
+  statusExpiresAt?: Date | null
   lastLoginIp?: string | null
 }
 
@@ -80,12 +84,14 @@ interface ExternalAuthAuthenticatedResult {
 
 export type ExternalAuthResolutionResult = ExternalAuthPendingResult | ExternalAuthAuthenticatedResult
 
-function assertUserCanUseAuth(status: "ACTIVE" | "MUTED" | "BANNED" | "INACTIVE", action: string) {
-  if (status === "BANNED") {
+function assertUserCanUseAuth(user: { status: UserStatus; statusExpiresAt?: Date | null }, action: string) {
+  const effectiveStatus = resolveEffectiveUserStatus(user)
+
+  if (effectiveStatus === "BANNED") {
     apiError(403, `该账号已被拉黑，无法${action}`)
   }
 
-  if (status === "INACTIVE") {
+  if (effectiveStatus === "INACTIVE") {
     apiError(403, `该账号未激活，无法${action}`)
   }
 }
@@ -364,7 +370,7 @@ export async function connectExternalAuthIdentityToUser(input: {
     apiError(404, "站内账户不存在")
   }
 
-  assertUserCanUseAuth(user.status, "绑定新的登录方式")
+  assertUserCanUseAuth(user, "绑定新的登录方式")
 
   await executeAddonActionHook("auth.identity.bind.before", {
     userId: user.id,
@@ -458,7 +464,7 @@ export async function resolveExternalAuth(identity: ExternalAuthIdentity, siteSe
         apiError(404, "关联的站内账户不存在")
       }
 
-      assertUserCanUseAuth(linkedUser.status, "登录")
+      assertUserCanUseAuth(linkedUser, "登录")
 
       return {
         kind: "authenticated",
@@ -566,7 +572,7 @@ export async function completePendingExternalAuthBind(input: {
     apiError(401, "用户名/邮箱或密码错误")
   }
 
-  assertUserCanUseAuth(matchedUser.status, "绑定第三方登录")
+  assertUserCanUseAuth(matchedUser, "绑定第三方登录")
 
   await executeAddonActionHook("auth.identity.bind.before", {
     userId: matchedUser.id,
@@ -649,7 +655,7 @@ export async function findPasskeyLinkedUserByCredentialId(credentialId: string):
     apiError(404, "Passkey 绑定的站内账户不存在")
   }
 
-  assertUserCanUseAuth(user.status, "使用 Passkey 登录")
+  assertUserCanUseAuth(user, "使用 Passkey 登录")
 
   return {
     credential,

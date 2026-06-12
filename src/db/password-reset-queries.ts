@@ -29,6 +29,7 @@ export function findUserByPhone(phone: string) {
       phone: true,
       phoneVerifiedAt: true,
       status: true,
+      statusExpiresAt: true,
       lastLoginIp: true,
     },
   })

@@ -163,7 +163,7 @@ function RewardPoolSummary({
           </p>
           <p>
             首个有效回复会追加 {formatCompactPointValue(postJackpotReplyIncrementPoints)} {pointName}
-            并按 {postJackpotHitProbability}% 概率抽奖，后续回复改为随机小额追加且中奖概率递减。
+            并按 {postJackpotHitProbability}% 概率抽奖{postJackpotHitProbability >= 100 ? "，有效回复会必中。" : "，后续回复改为随机小额追加且中奖概率递减。"}
           </p>
         </>
       ) : (

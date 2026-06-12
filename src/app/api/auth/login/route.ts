@@ -18,6 +18,7 @@ import { createSessionToken, getSessionCookieName, getSessionCookieOptions } fro
 import { getServerSiteSettings } from "@/lib/site-settings"
 import { canSendSms } from "@/lib/sms"
 import { verifyTurnstileToken } from "@/lib/turnstile"
+import { resolveEffectiveUserStatus } from "@/lib/user-status"
 import { validateLoginPayload } from "@/lib/validators"
 import { createRequestWriteGuardOptions } from "@/lib/write-guard-policies"
 import { withRequestWriteGuard } from "@/lib/write-guard"
@@ -114,11 +115,13 @@ export const POST = createRouteHandler(async ({ request }) => {
         apiError(401, "手机号或验证码错误")
       }
 
-      if (user.status === "BANNED") {
+      const effectiveStatus = resolveEffectiveUserStatus(user)
+
+      if (effectiveStatus === "BANNED") {
         apiError(403, "该账号已被拉黑，无法登录")
       }
 
-      if (user.status === "INACTIVE") {
+      if (effectiveStatus === "INACTIVE") {
         apiError(403, "该账号未激活，无法登录")
       }
 
@@ -219,11 +222,13 @@ export const POST = createRouteHandler(async ({ request }) => {
       apiError(401, "邮箱/用户名/手机号或密码错误")
     }
 
-    if (user.status === "BANNED") {
+    const effectiveStatus = resolveEffectiveUserStatus(user)
+
+    if (effectiveStatus === "BANNED") {
       apiError(403, "该账号已被拉黑，无法登录")
     }
 
-    if (user.status === "INACTIVE") {
+    if (effectiveStatus === "INACTIVE") {
       apiError(403, "该账号未激活，无法登录")
     }
 

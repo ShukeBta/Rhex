@@ -73,6 +73,7 @@ export interface AdminBasicSettingsInitialSettings {
   commentEditableMinutes: number
   godCommentAutoLikeThreshold: number
   guestCanViewComments: boolean
+  forumRequireLoginToBrowse: boolean
   commentInitialVisibleReplies: number
   mentionRecommendations: MentionRecommendationSettings
   siteChatEnabled: boolean
@@ -209,6 +210,7 @@ export interface AdminBasicSettingsDraft {
   commentEditableMinutes: string
   godCommentAutoLikeThreshold: string
   guestCanViewComments: boolean
+  forumRequireLoginToBrowse: boolean
   commentInitialVisibleReplies: string
   mentionDefaultUsernames: string
   siteChatEnabled: boolean
@@ -450,6 +452,7 @@ export function createAdminBasicSettingsDraft(initialSettings: AdminBasicSetting
     commentEditableMinutes: coerceNumberString(initialSettings.commentEditableMinutes, 5),
     godCommentAutoLikeThreshold: coerceNumberString(initialSettings.godCommentAutoLikeThreshold, DEFAULT_GOD_COMMENT_AUTO_LIKE_THRESHOLD),
     guestCanViewComments: coerceBoolean(initialSettings.guestCanViewComments, true),
+    forumRequireLoginToBrowse: coerceBoolean(initialSettings.forumRequireLoginToBrowse, false),
     commentInitialVisibleReplies: coerceNumberString(initialSettings.commentInitialVisibleReplies, 10),
     mentionDefaultUsernames: (initialSettings.mentionRecommendations?.defaultUsernames ?? []).join("\n"),
     siteChatEnabled: coerceBoolean(initialSettings.siteChatEnabled, false),
@@ -722,6 +725,7 @@ export function buildAdminBasicSettingsPayload(draft: AdminBasicSettingsDraft, m
   return {
     tippingEnabled: draft.tippingEnabled,
     guestCanViewComments: draft.guestCanViewComments,
+    forumRequireLoginToBrowse: draft.forumRequireLoginToBrowse,
     commentInitialVisibleReplies: Number(draft.commentInitialVisibleReplies),
     mentionDefaultUsernames: draft.mentionDefaultUsernames,
     siteChatEnabled: draft.siteChatEnabled,

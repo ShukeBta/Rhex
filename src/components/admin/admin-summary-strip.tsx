@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import Link from "next/link"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -24,6 +25,8 @@ export interface AdminSummaryItem {
   icon?: ReactNode
   tone?: AdminSummaryTone
   badgeLabel?: string
+  href?: string
+  active?: boolean
 }
 
 interface AdminSummaryStripProps {
@@ -48,6 +51,8 @@ function AdminSummaryCard({
   icon,
   tone = "default",
   badgeLabel,
+  href,
+  active = false,
 }: AdminSummaryItem) {
   const formattedValue = typeof value === "number" ? formatNumber(value) : value
   const accent = icon ? (
@@ -60,8 +65,15 @@ function AdminSummaryCard({
     </Badge>
   ) : null
 
-  return (
-    <Card size="sm" className="min-w-[116px] flex-1">
+  const card = (
+    <Card
+      size="sm"
+      className={cn(
+        "min-w-[116px] flex-1",
+        href ? "h-full transition-colors hover:bg-muted/35" : null,
+        active ? "border-primary/40 bg-primary/5 ring-1 ring-primary/20" : null
+      )}
+    >
       <CardContent className="flex items-start justify-between gap-2 px-3 py-2.5">
         <div className="min-w-0">
           <p className="truncate text-[11px] leading-4 text-muted-foreground">{label}</p>
@@ -71,6 +83,20 @@ function AdminSummaryCard({
         {accent}
       </CardContent>
     </Card>
+  )
+
+  if (!href) {
+    return card
+  }
+
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className="min-w-[116px] flex-1 rounded-xl outline-hidden focus-visible:ring-2 focus-visible:ring-ring/50"
+    >
+      {card}
+    </Link>
   )
 }
 

@@ -7,6 +7,7 @@ interface AddonNotificationRecordSource {
   senderId: number | null
   relatedType: string
   relatedId: string
+  url?: string | null
   title: string
   content: string
   createdAt: Date
@@ -22,6 +23,7 @@ export function mapAddonNotificationRecord(
     senderId: notification.senderId ?? null,
     relatedType: notification.relatedType as AddonNotificationRecord["relatedType"],
     relatedId: notification.relatedId,
+    url: notification.url ?? null,
     title: notification.title,
     content: notification.content,
     createdAt: notification.createdAt.toISOString(),

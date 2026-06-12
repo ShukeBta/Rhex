@@ -82,6 +82,22 @@ function ensureCanApplyRestrictiveStatus(user: UserStatusRecord, status: Restric
   if (blockedMessage) apiError(403, blockedMessage)
 }
 
+function ensureCanChangeTargetRole(context: AdminActionContext, user: UserStatusRecord, nextRole: UserRole) {
+  if (user.role === UserRole.ADMIN && nextRole !== UserRole.ADMIN) {
+    apiError(403, "不能降级管理员账号")
+  }
+
+  if (context.actor.id === normalizePositiveUserId(context.targetId) && nextRole !== UserRole.ADMIN) {
+    apiError(403, "不能把当前登录管理员移出管理员组")
+  }
+}
+
+function ensureCanResetTargetPassword(context: AdminActionContext, user: UserStatusRecord) {
+  if (user.role === UserRole.ADMIN && context.actor.id !== normalizePositiveUserId(context.targetId)) {
+    apiError(403, "不能重置其他管理员账号的密码")
+  }
+}
+
 interface StatusExpirationInput {
   expiresAt: Date
   displayText: string
@@ -222,6 +238,8 @@ export const adminUserActionHandlers: Record<string, AdminActionDefinition> = {
     if (!isSiteAdmin(context.actor)) apiError(403, "仅管理员可设置版主")
     const userId = normalizePositiveUserId(context.targetId)
     if (!userId) apiError(400, "用户标识不合法")
+    const user = requireUserStatusRecord(await findUserStatus(userId))
+    ensureCanChangeTargetRole(context, user, UserRole.MODERATOR)
     await updateUserRole(userId, UserRole.MODERATOR, UserStatus.ACTIVE)
 
     await writeAdminActionLog(context, adminUserActionHandlers["user.promoteModerator"].metadata)
@@ -240,6 +258,8 @@ export const adminUserActionHandlers: Record<string, AdminActionDefinition> = {
     if (!isSiteAdmin(context.actor)) apiError(403, "仅管理员可调整角色")
     const userId = normalizePositiveUserId(context.targetId)
     if (!userId) apiError(400, "用户标识不合法")
+    const user = requireUserStatusRecord(await findUserStatus(userId))
+    ensureCanChangeTargetRole(context, user, UserRole.USER)
     await demoteUserToUser(userId)
 
     await writeAdminActionLog(context, adminUserActionHandlers["user.demoteToUser"].metadata)
@@ -343,6 +363,8 @@ export const adminUserActionHandlers: Record<string, AdminActionDefinition> = {
     const newPassword = String(context.body.newPassword ?? "")
     if (!newPassword) apiError(400, "新密码不能为空")
     if (newPassword.length < 6 || newPassword.length > 64) apiError(400, "新密码长度需为 6-64 位")
+    const userStatus = requireUserStatusRecord(await findUserStatus(userId))
+    ensureCanResetTargetPassword(context, userStatus)
     const user = await findUserUsername(userId)
     if (!user) apiError(404, "用户不存在")
     const passwordHash = await bcrypt.hash(newPassword, 10)

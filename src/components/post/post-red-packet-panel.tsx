@@ -87,7 +87,11 @@ export function PostRedPacketPanel({ postId, pointName, summary }: PostRedPacket
           {summary.rewardMode === "JACKPOT" ? (
             <div className="col-span-2 rounded-xl bg-secondary/40 px-4 py-3">
               <p className="text-xs text-muted-foreground">递增规则</p>
-              <p className="mt-1 font-semibold">首回 +{formatCompactPointValue(summary.jackpotReplyIncrementPoints ?? 0)}，复回随机小额追加</p>
+              <p className="mt-1 font-semibold">
+                {summary.jackpotHitProbability && summary.jackpotHitProbability >= 100
+                  ? `有效回复必中，首回 +${formatCompactPointValue(summary.jackpotReplyIncrementPoints ?? 0)}`
+                  : `首回 +${formatCompactPointValue(summary.jackpotReplyIncrementPoints ?? 0)}，复回随机小额追加`}
+              </p>
             </div>
           ) : (
             <div className="col-span-2 rounded-xl bg-secondary/40 px-4 py-3">
@@ -129,7 +133,7 @@ export function PostRedPacketPanel({ postId, pointName, summary }: PostRedPacket
           <div className="flex min-w-0 items-center gap-3">
             {summary.currentUserPoints <= 0 ? (
               <Link href="/topup" className="text-sm text-primary hover:opacity-80">去充值 / 兑换</Link>
-            ) : <span className="text-xs text-muted-foreground">{summary.rewardMode === "JACKPOT" ? `${pointName}会随着回复数量动态增加，首次回复有概率获得${pointName}池中的部分${pointName}奖励。` : "系统会在互动成功后自动判断并发放红包。"}</span>}
+            ) : <span className="text-xs text-muted-foreground">{summary.rewardMode === "JACKPOT" ? (summary.jackpotHitProbability && summary.jackpotHitProbability >= 100 ? `有效回复会获得${pointName}池中的部分${pointName}奖励。` : `${pointName}会随着回复数量动态增加，首次回复有概率获得${pointName}池中的部分${pointName}奖励。`) : "系统会在互动成功后自动判断并发放红包。"}</span>}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <Link

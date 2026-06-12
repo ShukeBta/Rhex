@@ -132,13 +132,19 @@ export function ActionsTab({
             <p className="text-xs text-muted-foreground">用于人工核验后的账号找回或安全处置。</p>
           </div>
           <div className="mt-4 flex flex-col gap-3">
-            <Field type="password" label="新密码" value={account.state.newPassword} onChange={account.setNewPassword} placeholder="请输入 6-64 位新密码" />
-            <Field type="password" label="确认新密码" value={account.state.confirmPassword} onChange={account.setConfirmPassword} placeholder="请再次输入新密码" />
-            <TextAreaField label="操作备注" value={account.state.passwordMessage} onChange={account.setPasswordMessage} placeholder="记录重置原因、工单号或核验说明" rows={4} />
-            {account.state.passwordFeedback ? <p className="text-xs text-muted-foreground">{account.state.passwordFeedback}</p> : null}
-            <Button type="button" variant="outline" disabled={isPending} className="h-8 rounded-full px-3 text-xs" onClick={account.savePassword}>
-              {isPending ? "保存中..." : "确认修改密码"}
-            </Button>
+            {isAdminTarget ? (
+              <p className="rounded-xl border border-dashed border-border bg-secondary/20 p-3 text-xs text-muted-foreground">管理员账号密码不能在用户管理弹窗中重置。</p>
+            ) : (
+              <>
+                <Field type="password" label="新密码" value={account.state.newPassword} onChange={account.setNewPassword} placeholder="请输入 6-64 位新密码" />
+                <Field type="password" label="确认新密码" value={account.state.confirmPassword} onChange={account.setConfirmPassword} placeholder="请再次输入新密码" />
+                <TextAreaField label="操作备注" value={account.state.passwordMessage} onChange={account.setPasswordMessage} placeholder="记录重置原因、工单号或核验说明" rows={4} />
+                {account.state.passwordFeedback ? <p className="text-xs text-muted-foreground">{account.state.passwordFeedback}</p> : null}
+                <Button type="button" variant="outline" disabled={isPending} className="h-8 rounded-full px-3 text-xs" onClick={account.savePassword}>
+                  {isPending ? "保存中..." : "确认修改密码"}
+                </Button>
+              </>
+            )}
           </div>
         </section>
       </div>

@@ -55,6 +55,7 @@ export function findAuthUserStatusById(userId: number, client?: DbClient) {
       id: true,
       username: true,
       status: true,
+      statusExpiresAt: true,
     },
   })
 }
@@ -66,6 +67,7 @@ export function findAuthenticatedUserSummaryById(userId: number, client?: DbClie
       id: true,
       username: true,
       status: true,
+      statusExpiresAt: true,
       lastLoginIp: true,
     },
   })
@@ -97,6 +99,7 @@ export function findUserLoginCandidate(login: string, client?: DbClient) {
       username: true,
       passwordHash: true,
       status: true,
+      statusExpiresAt: true,
       lastLoginIp: true,
     },
   })
