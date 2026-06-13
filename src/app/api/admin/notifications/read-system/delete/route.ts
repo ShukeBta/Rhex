@@ -11,4 +11,6 @@ export const POST = createAdminRouteHandler(async () => {
 }, {
   errorMessage: "删除已读系统消息失败",
   logPrefix: "[api/admin/notifications/read-system/delete] unexpected error",
+  unauthorizedMessage: "无权操作",
+  permission: "admin.operations.manage",
 })

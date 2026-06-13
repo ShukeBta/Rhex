@@ -8,6 +8,7 @@ import { AdminSummaryStrip } from "@/components/admin/admin-summary-strip"
 import { Field, SelectField, TextAreaField } from "@/components/admin/admin-structure.shared"
 import type {
   AdminBoardApplicationManagerProps,
+  BoardApplicationZoneOption,
   BoardApplicationItem,
   BoardApplicationReviewFormState,
 } from "@/components/admin/admin-structure.types"
@@ -33,7 +34,6 @@ import {
 } from "@/components/ui/table"
 import { toast } from "@/components/ui/toast"
 import { formatDateTime, formatNumber } from "@/lib/formatters"
-import type { ZoneItem } from "@/lib/admin-structure-management"
 
 export function AdminBoardApplicationManager({
   zones,
@@ -168,7 +168,7 @@ function BoardApplicationReviewModal({
   onClose,
 }: {
   application: BoardApplicationItem | null
-  zones: ZoneItem[]
+  zones: BoardApplicationZoneOption[]
   onClose: () => void
 }) {
   const router = useRouter()

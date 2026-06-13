@@ -10,10 +10,12 @@ export { getSelfServeAdsAppConfig, updateSelfServeAdsAppConfig } from "@/lib/app
 import { countPendingSelfServeOrders, findSelfServeApprovedAds, findSelfServeOrderById, findSelfServeOrdersForAdmin, updateSelfServeOrder } from "@/db/self-serve-ads"
 import { createSystemNotification, submitSelfServeAdOrderTransaction } from "@/db/self-serve-ads-write-queries"
 
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import { getCurrentUser } from "@/lib/auth"
 import { getSelfServeAdsAppConfig as loadSelfServeAdsAppConfig } from "@/lib/app-config"
 import { enforceSensitiveText } from "@/lib/content-safety"
 import { serializeDateTime } from "@/lib/formatters"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 import { buildSelfServeAdPriceMap, getSelfServeAdPrice, toSelfServeAdConfig, validateSelfServeAdPurchaseDraft } from "@/lib/self-serve-ads.shared"
 
 import { normalizeNonNegativeInteger, normalizePositiveInteger, normalizeTrimmedText } from "@/lib/shared/normalizers"
@@ -24,6 +26,13 @@ import { getSiteSettings, SITE_SETTINGS_CACHE_TAG } from "@/lib/site-settings"
 export const SELF_SERVE_ADS_CACHE_TAG = "self-serve-ads"
 
 
+async function ensureCanManageSelfServeAdsAdmin() {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.apps.manage",
+    "无权限管理自助广告",
+  )
+}
 
 function buildPlaceholder(slotType: SelfServeAdSlotType, slotIndex: number): SelfServeAdItem {
 
@@ -154,6 +163,8 @@ export async function submitSelfServeAdOrder(input: SelfServeAdPurchaseDraft) {
 }
 
 export async function getSelfServeAdsAdminData() {
+  await ensureCanManageSelfServeAdsAdmin()
+
   const [appConfig, settings, items, pendingCount] = await Promise.all([
     loadSelfServeAdsAppConfig(),
     getSiteSettings(),
@@ -184,6 +195,8 @@ export async function reviewSelfServeAdOrder(input: {
   backgroundColor?: string
   durationMonths?: number
 }) {
+  await ensureCanManageSelfServeAdsAdmin()
+
   const existing = await findSelfServeOrderById(input.id)
   if (!existing) throw new Error("广告订单不存在")
 

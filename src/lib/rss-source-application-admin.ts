@@ -1,11 +1,21 @@
 import { prisma } from "@/db/client"
 import { resolvePagination } from "@/db/helpers"
 import { RssSourceApplicationStatus, type Prisma } from "@/db/types"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import { apiError } from "@/lib/api-route"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 import { normalizePageSize, normalizePositiveInteger, normalizeText, normalizeTrimmedText } from "@/lib/shared/normalizers"
 
 const RSS_SOURCE_APPLICATION_PAGE_SIZE_OPTIONS = [20, 50, 100] as const
 const RSS_SOURCE_APPLICATION_DEFAULT_PAGE_SIZE = 20
+
+async function ensureCanManageRssSourceApplications() {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.apps.manage",
+    "无权限管理 RSS 收录申请",
+  )
+}
 
 export interface RssSourceApplicationAdminListItem {
   id: string
@@ -160,6 +170,8 @@ function normalizeReviewNote(value: unknown) {
 }
 
 export async function getRssSourceApplicationAdminPageData(query: RssSourceApplicationAdminQuery = {}): Promise<RssSourceApplicationAdminPageData> {
+  await ensureCanManageRssSourceApplications()
+
   const normalized = {
     keyword: normalizeTrimmedText(query.keyword, 100),
     status: normalizeApplicationStatus(query.status),

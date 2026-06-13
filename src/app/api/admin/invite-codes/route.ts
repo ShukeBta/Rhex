@@ -18,6 +18,7 @@ export const GET = createAdminRouteHandler(async () => {
   errorMessage: "读取邀请码失败",
   logPrefix: "[api/admin/invite-codes:GET] unexpected error",
   unauthorizedMessage: "无权访问",
+  permission: "admin.operations.manage",
 })
 
 export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
@@ -36,6 +37,7 @@ export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
   errorMessage: "生成邀请码失败",
   logPrefix: "[api/admin/invite-codes:POST] unexpected error",
   unauthorizedMessage: "无权操作",
+  permission: "admin.operations.manage",
 })
 
 export const DELETE = createAdminRouteHandler(async ({ request }) => {
@@ -49,4 +51,5 @@ export const DELETE = createAdminRouteHandler(async ({ request }) => {
   errorMessage: "删除邀请码失败",
   logPrefix: "[api/admin/invite-codes:DELETE] unexpected error",
   unauthorizedMessage: "无权操作",
+  permission: "admin.operations.manage",
 })

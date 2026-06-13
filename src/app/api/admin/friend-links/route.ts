@@ -62,4 +62,5 @@ export const POST = createAdminRouteHandler(async ({ request }) => {
   errorMessage: "操作失败",
   logPrefix: "[api/admin/friend-links:POST] unexpected error",
   unauthorizedMessage: "无权操作",
+  permission: "admin.operations.manage",
 })

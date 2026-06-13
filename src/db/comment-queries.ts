@@ -126,9 +126,11 @@ export function findEditableCommentById(commentId: string) {
       post: {
         select: {
           slug: true,
+          boardId: true,
           board: {
             select: {
               slug: true,
+              zoneId: true,
               zone: {
                 select: {
                   slug: true,

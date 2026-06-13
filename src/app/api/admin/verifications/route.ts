@@ -19,6 +19,7 @@ export const GET = createAdminRouteHandler(async () => {
   errorMessage: "读取认证管理数据失败",
   logPrefix: "[api/admin/verifications:GET] unexpected error",
   unauthorizedMessage: "无权执行后台操作",
+  permission: "admin.users.grantVerifications",
 })
 
 export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
@@ -34,6 +35,7 @@ export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
   errorMessage: "创建认证类型失败",
   logPrefix: "[api/admin/verifications:POST] unexpected error",
   unauthorizedMessage: "无权执行后台操作",
+  permission: "admin.users.grantVerifications",
 })
 
 export const PUT = createAdminRouteHandler(async ({ request, adminUser }) => {
@@ -52,6 +54,7 @@ export const PUT = createAdminRouteHandler(async ({ request, adminUser }) => {
   errorMessage: "更新认证管理数据失败",
   logPrefix: "[api/admin/verifications:PUT] unexpected error",
   unauthorizedMessage: "无权执行后台操作",
+  permission: "admin.users.grantVerifications",
 })
 
 export const DELETE = createAdminRouteHandler(async ({ request, adminUser }) => {
@@ -67,4 +70,5 @@ export const DELETE = createAdminRouteHandler(async ({ request, adminUser }) => 
   errorMessage: "删除认证类型失败",
   logPrefix: "[api/admin/verifications:DELETE] unexpected error",
   unauthorizedMessage: "无权执行后台操作",
+  permission: "admin.users.grantVerifications",
 })

@@ -168,7 +168,7 @@ function mapAdminTaskItem(item: TaskDefinition): AdminTaskItem {
 }
 
 export async function getAdminTaskList(): Promise<AdminTaskItem[]> {
-  const admin = await requireAdminUser()
+  const admin = await requireAdminUser("admin.operations.manage")
   if (!admin) {
     apiError(403, "无权访问任务系统")
   }
@@ -180,7 +180,7 @@ export async function getAdminTaskList(): Promise<AdminTaskItem[]> {
 }
 
 export async function saveAdminTaskDefinition(raw: unknown) {
-  const admin = await requireAdminUser()
+  const admin = await requireAdminUser("admin.operations.manage")
   if (!admin) {
     apiError(403, "无权操作任务系统")
   }
@@ -232,7 +232,7 @@ export async function saveAdminTaskDefinition(raw: unknown) {
 }
 
 export async function updateAdminTaskStatus(id: string, status: string) {
-  const admin = await requireAdminUser()
+  const admin = await requireAdminUser("admin.operations.manage")
   if (!admin) {
     apiError(403, "无权更新任务状态")
   }
@@ -255,7 +255,7 @@ export async function updateAdminTaskStatus(id: string, status: string) {
 }
 
 export async function duplicateAdminTaskDefinition(id: string) {
-  const admin = await requireAdminUser()
+  const admin = await requireAdminUser("admin.operations.manage")
   if (!admin) {
     apiError(403, "无权复制任务")
   }
@@ -292,7 +292,7 @@ export async function duplicateAdminTaskDefinition(id: string) {
 }
 
 export async function deleteAdminTaskDefinition(id: string) {
-  const admin = await requireAdminUser()
+  const admin = await requireAdminUser("admin.operations.manage")
   if (!admin) {
     apiError(403, "无权删除任务")
   }

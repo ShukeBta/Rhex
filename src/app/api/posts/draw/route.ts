@@ -1,7 +1,8 @@
 import { prisma } from "@/db/client"
 import { apiError, apiSuccess, createUserRouteHandler, readJsonBody, requireStringField } from "@/lib/api-route"
+import { canAdminActorManageBoardWithPermission } from "@/lib/admin-scope-permissions"
 import { drawLotteryWinners } from "@/lib/lottery"
-import { canManageBoard, resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
+import { resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
 import { revalidatePostDataCache } from "@/lib/post-detail-cache"
 
 export const POST = createUserRouteHandler(async ({ request, currentUser }) => {
@@ -28,7 +29,15 @@ export const POST = createUserRouteHandler(async ({ request, currentUser }) => {
   }
 
   const adminActor = await resolveAdminActorFromSessionUser(currentUser)
-  const canManageAsAdmin = adminActor && (adminActor.role === "ADMIN" || canManageBoard(adminActor, post.boardId, post.board.zoneId))
+  const canManageAsAdmin = Boolean(
+    adminActor
+    && await canAdminActorManageBoardWithPermission(
+      adminActor,
+      "admin.content.manage",
+      post.boardId,
+      post.board.zoneId,
+    ),
+  )
   if (!canManageAsAdmin && post.authorId !== currentUser.id) {
     apiError(403, "仅楼主或管理员可开奖")
   }

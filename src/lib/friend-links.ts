@@ -12,10 +12,11 @@ import {
   findFriendLinksForAdmin,
   updateFriendLink,
 } from "@/db/friend-links"
-import { getCurrentUser } from "@/lib/auth"
 import { apiError } from "@/lib/api-route"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import { enforceSensitiveText } from "@/lib/content-safety"
 import { reviewFriendLinkPlacement } from "@/lib/friend-link-auto-review"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 import { normalizeTrimmedText } from "@/lib/shared/normalizers"
 import { getSiteSettings, SITE_SETTINGS_CACHE_TAG } from "@/lib/site-settings"
 
@@ -162,6 +163,12 @@ export function revalidateFriendLinksCache() {
 }
 
 export async function getAdminFriendLinkPageData(status?: string) {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.operations.manage",
+    "无权限访问友情链接管理",
+  )
+
   const [settings, items, pendingCount] = await Promise.all([
     getSiteSettings(),
     findFriendLinksForAdmin(status === "PENDING" || status === "APPROVED" || status === "REJECTED" || status === "DISABLED" ? status : "ALL"),
@@ -232,6 +239,12 @@ export async function submitFriendLinkApplication(input: FriendLinkSubmissionInp
 
 
 export async function createFriendLinkByAdmin(input: AdminFriendLinkInput) {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.operations.manage",
+    "无权操作友情链接",
+  )
+
   const rawName = normalizeTrimmedText(input.name, 40)
   const url = normalizeUrl(input.url)
   const logoPath = normalizeTrimmedText(input.logoPath, 300)
@@ -275,10 +288,11 @@ export async function reviewFriendLink(input: {
   url?: string
   logoPath?: string
 }) {
-  const currentUser = await getCurrentUser()
-  if (!currentUser) {
-    apiError(401, "请先登录")
-  }
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.operations.manage",
+    "无权操作友情链接",
+  )
 
   const existing = await findFriendLinkById(input.id)
   if (!existing) {
@@ -330,6 +344,12 @@ export async function reviewFriendLink(input: {
 }
 
 export async function deleteFriendLinkByAdmin(id: string) {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.operations.manage",
+    "无权操作友情链接",
+  )
+
   const normalizedId = normalizeTrimmedText(id, 100)
   if (!normalizedId) {
     apiError(400, "缺少友情链接 ID")

@@ -9,6 +9,7 @@ export function findPostUpdateContext(postId: string) {
       id: true,
       slug: true,
       authorId: true,
+      boardId: true,
       isAnonymous: true,
       type: true,
       content: true,
@@ -17,6 +18,7 @@ export function findPostUpdateContext(postId: string) {
       board: {
         select: {
           slug: true,
+          zoneId: true,
           zone: {
             select: {
               slug: true,

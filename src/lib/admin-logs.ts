@@ -19,6 +19,8 @@ import {
 } from "@/db/admin-log-queries"
 import { serializeDate, serializeDateTime } from "@/lib/formatters"
 import { buildPointEffectSummaryText, resolvePointLogAuditPresentation } from "@/lib/point-log-audit"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 
 import { normalizePageSize, normalizePositiveInteger } from "@/lib/shared/normalizers"
 
@@ -170,6 +172,12 @@ function resolvePaymentTone(status: string, fulfillmentStatus: string) {
 }
 
 export async function getAdminLogCenter(options: GetAdminLogCenterOptions = {}): Promise<AdminLogCenterResult> {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.logs.view",
+    "无权限访问日志中心",
+  )
+
   const activeTab = normalizeTab(options.activeTab)
   const keyword = String(options.keyword ?? "").trim()
   const action = String(options.action ?? "ALL").trim() || "ALL"

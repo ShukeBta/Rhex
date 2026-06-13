@@ -34,6 +34,16 @@ import { deleteAddonConfigValues } from "@/addons-host/runtime/config"
 import { deleteAddonDataStore } from "@/addons-host/runtime/data"
 import { deleteAddonSecretValues } from "@/addons-host/runtime/secrets"
 import { executeAddonActionHook } from "@/addons-host/runtime/hooks"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
+
+async function ensureCanManageAddons() {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.addons.manage",
+    "无权管理插件",
+  )
+}
 
 
 function buildAddonStateLabel(addon: LoadedAddonRuntime): AddonAdminItem["stateLabel"] {
@@ -250,6 +260,8 @@ async function clearRecoveredAddonErrors() {
 }
 
 export async function getAddonsAdminData(): Promise<AddonsAdminData> {
+  await ensureCanManageAddons()
+
   const { addons, storageMode } = await syncAddonRegistryStateSnapshot()
   const items = addons.map(mapAddonAdminItem)
 
@@ -266,12 +278,16 @@ export async function getAddonsAdminData(): Promise<AddonsAdminData> {
 }
 
 export async function getAddonAdminItem(addonId: string) {
+  await ensureCanManageAddons()
+
   const { addons } = await syncAddonRegistryStateSnapshot()
   const addon = addons.find((item) => item.manifest.id === addonId) ?? null
   return addon ? mapAddonAdminItem(addon) : null
 }
 
 export async function getAddonAdminDetailData(addonId: string): Promise<AddonAdminDetailData | null> {
+  await ensureCanManageAddons()
+
   const [{ addons, storageMode }, lifecycleLogs] = await Promise.all([
     syncAddonRegistryStateSnapshot(),
     listAddonLifecycleLogs(addonId, 20),
@@ -321,6 +337,8 @@ function buildAddonRelationSnapshot(addons: LoadedAddonRuntime[]) {
 }
 
 export async function runAddonManagementAction(action: AddonManagementAction, addonId?: string | null) {
+  await ensureCanManageAddons()
+
   if (action === "sync") {
     refreshAddonRuntime(addonId?.trim() || "")
     const count = await syncAddonRegistryState()

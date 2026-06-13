@@ -25,6 +25,7 @@ export const GET = createAdminRouteHandler(async ({ request }) => {
   errorMessage: "获取附件列表失败",
   logPrefix: "[api/admin/attachments:GET] unexpected error",
   unauthorizedMessage: "无权访问附件管理",
+  permission: "admin.operations.manage",
 })
 
 export const POST = createAdminRouteHandler<unknown>(async ({ request, adminUser }) => {
@@ -91,4 +92,5 @@ export const POST = createAdminRouteHandler<unknown>(async ({ request, adminUser
   errorMessage: "附件管理操作失败",
   logPrefix: "[api/admin/attachments:POST] unexpected error",
   unauthorizedMessage: "无权操作附件管理",
+  permission: "admin.operations.manage",
 })

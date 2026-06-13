@@ -1,6 +1,8 @@
 import { replacePostTags } from "@/db/post-taxonomy-queries"
 import { apiError, apiSuccess, createAdminRouteHandler, readJsonBody, requireStringField } from "@/lib/api-route"
 import { getRequestIp, writeAdminLog } from "@/lib/admin"
+import { canAdminWithPermissionOverrides } from "@/lib/admin-permission-overrides"
+import { getAdminManagementTier } from "@/lib/admin-permission-policy"
 import { revalidateUpdatedPostMutation } from "@/lib/content-mutation-revalidation"
 import { ensureCanManagePost } from "@/lib/moderator-permissions"
 
@@ -11,6 +13,14 @@ export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
 
   if (!Array.isArray(rawTags) || rawTags.some((item) => typeof item !== "string")) {
     apiError(400, "标签格式不正确")
+  }
+
+  if (adminUser.role === "ADMIN" && !await canAdminWithPermissionOverrides(adminUser, "admin.content.manage")) {
+    apiError(403, "无权更新帖子标签")
+  }
+
+  if (getAdminManagementTier(adminUser) === "REVIEWER") {
+    apiError(403, "审核员不能修改帖子标签")
   }
 
   const post = await ensureCanManagePost(adminUser, postId)

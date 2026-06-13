@@ -18,7 +18,7 @@ import { decrementBoardTreasuryPointsIfEnough } from "@/db/board-treasury-querie
 import { apiError } from "@/lib/api-route"
 import type { SessionActor } from "@/lib/auth"
 import { enforceSensitiveText } from "@/lib/content-safety"
-import { canWithdrawBoardTreasury, ensureCanManageBoard, resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
+import { canWithdrawBoardTreasury, ensureCanManageBoard, requireSiteAdminActor, resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
 import { createSystemNotification } from "@/lib/notification-writes"
 import { applyPointDelta } from "@/lib/point-center"
 import { POINT_LOG_EVENT_TYPES } from "@/lib/point-log-events"
@@ -262,6 +262,14 @@ export async function reviewBoardApplication(input: {
   reason?: string
   reviewNote?: string
 }) {
+  const { ensureAdminActorPermission } = await import("@/lib/admin-scope-permissions")
+
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.operations.manage",
+    "无权审核节点申请",
+  )
+
   const application = await findBoardApplicationById(input.applicationId)
   if (!application) {
     apiError(404, "节点申请不存在")

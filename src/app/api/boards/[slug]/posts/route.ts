@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { checkBoardPermission } from "@/lib/board-access"
 import { getBoardBySlug, getBoardPosts } from "@/lib/boards"
 import { normalizeTaxonomyPostSort } from "@/lib/forum-taxonomy-sort"
-import { resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
+import { resolveContentVisibleAdminActor } from "@/lib/admin-scope-permissions"
 import { DEFAULT_ALLOWED_POST_TYPES, normalizePostTypes } from "@/lib/post-types"
 import { getSiteSettings } from "@/lib/site-settings"
 
@@ -72,7 +72,7 @@ export const GET = createRouteHandler(async ({ request, routeContext }) => {
   const currentSort = parseSort(request)
   const result = await getBoardPosts(slug, parsePage(request), settings.boardPostPageSize, currentSort, {
     userId: currentUser?.id ?? null,
-    adminActor: await resolveAdminActorFromSessionUser(currentUser),
+    adminActor: await resolveContentVisibleAdminActor(currentUser),
   })
 
   return apiSuccess({

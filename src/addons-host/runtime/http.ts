@@ -32,7 +32,7 @@ export async function handleAddonApiRoute(scope: AddonApiScope, request: Request
   const method = normalizeHttpMethod(request.method)
 
   if (scope === "admin") {
-    const admin = await requireAdminUser()
+    const admin = await requireAdminUser("admin.addons.manage")
     if (!admin) {
       const response = NextResponse.json({ code: 403, message: "无权访问插件后台 API" }, { status: 403 })
       await emitAddonApiAfterHook({

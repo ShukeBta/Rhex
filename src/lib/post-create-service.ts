@@ -19,6 +19,7 @@ import { verifyCreatePostCaptchaWithAddonProviders } from "@/lib/addon-captcha-p
 import { readAddonFormFieldsFromBody } from "@/lib/addon-form-fields"
 import { resolveHookedStringValue } from "@/lib/addon-hook-values"
 import { apiError } from "@/lib/api-route"
+import { canAdminActorManageBoardWithPermission } from "@/lib/admin-scope-permissions"
 import { checkBoardPermission, getBoardAccessContextBySlug } from "@/lib/board-access"
 import { extractSummaryFromContent } from "@/lib/content"
 import { enforceSensitiveText } from "@/lib/content-safety"
@@ -45,6 +46,7 @@ import { POINT_LOG_EVENT_TYPES } from "@/lib/point-log-events"
 import { buildPostSlug } from "@/lib/post-slug"
 import { getSiteSettings } from "@/lib/site-settings"
 import { validatePostPayload } from "@/lib/validators"
+import { resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
 
 const MAX_POST_SLUG_RETRY_COUNT = 8
 
@@ -328,7 +330,16 @@ export async function createPostFlow(body: unknown, options: CreatePostFlowOptio
   })
 
   const statusMode = options.statusMode ?? "AUTO"
-  const skipsAutoReview = author.role === "ADMIN" || author.role === "MODERATOR"
+  const adminActor = await resolveAdminActorFromSessionUser(author)
+  const skipsAutoReview = Boolean(
+    adminActor
+    && await canAdminActorManageBoardWithPermission(
+      adminActor,
+      "admin.content.manage",
+      boardContext.board.id,
+      boardContext.board.zoneId,
+    ),
+  )
   const shouldPending = statusMode === "PENDING"
     ? true
     : statusMode === "PUBLISHED"

@@ -6,7 +6,8 @@ import { getAnonymousMaskDisplayIdentity } from "@/lib/post-anonymous"
 import { checkPostAccessPermission, mergeAccessPermissions, resolvePostAccessRequirements } from "@/lib/post-access"
 import { isPublicReadablePostStatus } from "@/lib/post-types"
 import { getSiteSettings } from "@/lib/site-settings"
-import { canManageBoard, resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
+import { canAdminActorManageBoardWithPermission } from "@/lib/admin-scope-permissions"
+import { resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
 
 function readPage(searchParams: URLSearchParams) {
   const page = Number(searchParams.get("page") ?? "1")
@@ -40,7 +41,24 @@ export const GET = createRouteHandler(async ({ request }) => {
   }
 
   const adminActor = await resolveAdminActorFromSessionUser(currentUser)
-  const canManageThisPost = Boolean(adminActor && canManageBoard(adminActor, boardAccessContext.board.id, boardAccessContext.board.zoneId))
+  const canManageThisPost = Boolean(
+    adminActor
+    && await canAdminActorManageBoardWithPermission(
+      adminActor,
+      "admin.content.manage",
+      boardAccessContext.board.id,
+      boardAccessContext.board.zoneId,
+    ),
+  )
+  const canManageComments = Boolean(
+    adminActor
+    && await canAdminActorManageBoardWithPermission(
+      adminActor,
+      "admin.comments.manage",
+      boardAccessContext.board.id,
+      boardAccessContext.board.zoneId,
+    ),
+  )
   const isPostOwner = currentUser?.id === boardAccessContext.post.authorId
   const isOwnerOrManager = Boolean(isPostOwner || canManageThisPost)
 
@@ -72,7 +90,7 @@ export const GET = createRouteHandler(async ({ request }) => {
     viewMode: readViewMode(requestUrl.searchParams),
   }, {
     userId: currentUser?.id,
-    isAdmin: canManageThisPost,
+    isAdmin: canManageComments,
     postAuthorId: boardAccessContext.post.authorId,
     postIsAnonymous: boardAccessContext.post.isAnonymous,
     commentsVisibleToAuthorOnly: boardAccessContext.post.commentsVisibleToAuthorOnly,

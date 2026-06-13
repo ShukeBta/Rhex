@@ -37,6 +37,17 @@ type PaymentGatewayStateRecord = {
   failureCount: number
 }
 
+async function ensureCanManagePaymentGatewayConfig() {
+  const { ensureAdminActorPermission } = await import("@/lib/admin-scope-permissions")
+  const { requireSiteAdminActor } = await import("@/lib/moderator-permissions")
+
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.apps.manage",
+    "无权限修改支付网关配置",
+  )
+}
+
 export interface ResolvedPaymentGatewayConfigDraft {
   record: {
     id: string
@@ -931,13 +942,19 @@ export async function resolvePaymentGatewayAlipayConfigDraftFromAdminInput(body:
 }
 
 export async function updatePaymentGatewayConfigFromAdminInput(body: JsonObject) {
+  await ensureCanManagePaymentGatewayConfig()
+
   return persistResolvedPaymentGatewayConfigDraft(await resolvePaymentGatewayConfigDraftFromAdminInput(body))
 }
 
 export async function updatePaymentGatewayBaseConfigFromAdminInput(body: JsonObject) {
+  await ensureCanManagePaymentGatewayConfig()
+
   return persistResolvedPaymentGatewayConfigDraft(await resolvePaymentGatewayBaseConfigDraftFromAdminInput(body))
 }
 
 export async function updatePaymentGatewayAlipayConfigFromAdminInput(body: JsonObject) {
+  await ensureCanManagePaymentGatewayConfig()
+
   return persistResolvedPaymentGatewayConfigDraft(await resolvePaymentGatewayAlipayConfigDraftFromAdminInput(body))
 }

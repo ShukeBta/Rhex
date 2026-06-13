@@ -3,6 +3,8 @@ import { randomBytes } from "crypto"
 import { countInviteCodesByCreator, createInviteCodesBatch, deleteInviteCodeById, deleteInviteCodesByScope, findInviteCodeByCode, findInviteCodeForUse, findInviteCodeList, findInviteCodesByCodes, findInviteCodesByCreator, findInvitePurchaseUser, findUserInviteResolverById, findUserInviteResolverByUsername } from "@/db/invite-code-queries"
 import { purchaseInviteCodeTransaction } from "@/db/invite-code-write-queries"
 import { apiError } from "@/lib/api-route"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 import { getSiteSettings } from "@/lib/site-settings"
 import { getVipLevel, isVipActive } from "@/lib/vip-status"
 
@@ -65,6 +67,12 @@ export async function generateUniqueInviteCode(length = DEFAULT_CODE_LENGTH) {
 
 
 export async function createInviteCodes(input: { count: number; createdById?: number | null; note?: string | null }) {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.operations.manage",
+    "无权操作邀请码",
+  )
+
   const count = Math.min(100, Math.max(1, Math.trunc(input.count)))
   const rows = [] as { code: string; createdById?: number | null; note?: string | null }[]
 
@@ -83,6 +91,12 @@ export async function createInviteCodes(input: { count: number; createdById?: nu
 }
 
 export async function getInviteCodeList(limit = 100): Promise<InviteCodeItem[]> {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.operations.manage",
+    "无权限访问邀请码",
+  )
+
   const rows = await findInviteCodeList(limit)
 
 
@@ -98,6 +112,12 @@ export async function getInviteCodeList(limit = 100): Promise<InviteCodeItem[]> 
 }
 
 export async function deleteInviteCodes(input: { scope: "single" | "used" | "unused" | "all"; id?: string }) {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.operations.manage",
+    "无权操作邀请码",
+  )
+
   if (input.scope === "single") {
     const id = input.id?.trim()
     if (!id) {

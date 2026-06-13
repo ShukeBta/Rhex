@@ -20,6 +20,7 @@ import { executeAddonActionHook, executeAddonWaterfallHook } from "@/addons-host
 import { resolvePagination } from "@/db/helpers"
 import { resolveHookedOptionalStringValue } from "@/lib/addon-hook-values"
 import { apiError } from "@/lib/api-route"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import { enforceSensitiveText } from "@/lib/content-safety"
 
 
@@ -28,6 +29,7 @@ import { enforceSensitiveText } from "@/lib/content-safety"
 import type { AdminReportListResult } from "@/lib/admin-report-management"
 import { getPostCommentPath, getPostPath } from "@/lib/post-links"
 import { getSiteSettings, type PostLinkDisplayMode } from "@/lib/site-settings"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 import { getUserDisplayName } from "@/lib/users"
 
 export interface CreateReportInput {
@@ -268,6 +270,12 @@ export async function createReport(input: CreateReportInput) {
 }
 
 export async function getAdminReports(options: { page?: number; pageSize?: number } = {}): Promise<AdminReportListResult> {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.operations.manage",
+    "无权限访问举报中心",
+  )
+
   const [total, pending, processing, resolved, rejected] = await countReportsByStatus()
   const pagination = resolvePagination(options, total)
 

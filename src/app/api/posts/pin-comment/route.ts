@@ -1,5 +1,7 @@
 import { prisma } from "@/db/client"
 import { apiError, apiSuccess, createUserRouteHandler, readJsonBody, requireStringField } from "@/lib/api-route"
+import { canAdminActorManageBoardWithPermission } from "@/lib/admin-scope-permissions"
+import { resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
 import { revalidatePostCommentCache } from "@/lib/post-detail-cache"
 
 export const POST = createUserRouteHandler(async ({ request, currentUser }) => {
@@ -13,6 +15,12 @@ export const POST = createUserRouteHandler(async ({ request, currentUser }) => {
     select: {
       id: true,
       authorId: true,
+      boardId: true,
+      board: {
+        select: {
+          zoneId: true,
+        },
+      },
     },
   })
 
@@ -20,10 +28,19 @@ export const POST = createUserRouteHandler(async ({ request, currentUser }) => {
     apiError(404, "帖子不存在")
   }
 
-  const isAdmin = currentUser.role === "ADMIN"
+  const adminActor = await resolveAdminActorFromSessionUser(currentUser)
+  const canManageComments = Boolean(
+    adminActor
+    && await canAdminActorManageBoardWithPermission(
+      adminActor,
+      "admin.comments.manage",
+      post.boardId,
+      post.board.zoneId,
+    ),
+  )
   const isOwner = currentUser.id === post.authorId
 
-  if (!isOwner && !isAdmin) {
+  if (!isOwner && !canManageComments) {
     apiError(403, "无权操作评论置顶")
   }
 

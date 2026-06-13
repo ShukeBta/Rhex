@@ -1,5 +1,6 @@
 import { prisma } from "@/db/client"
 import { PostAuctionStatus, type Prisma } from "@/db/types"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import {
   isBackgroundJobNonProductionNodeEnv,
   readBackgroundJobWebRuntimeMode,
@@ -20,6 +21,7 @@ import {
   resolveBackgroundJobRetryDelayMs,
 } from "@/lib/background-jobs"
 import { getBackgroundJobExecutionLogPage } from "@/lib/background-job-log-store"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 import { hasRedisUrl } from "@/lib/redis"
 
 export interface BackgroundWorkerAdminData {
@@ -178,6 +180,12 @@ export async function getBackgroundWorkerAdminData(options?: {
   delayedPage?: number
   deadLetterPage?: number
 }): Promise<BackgroundWorkerAdminData> {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.apps.manage",
+    "无权限访问 Worker 中心",
+  )
+
   const requestedLogPage = normalizeRequestedWorkerLogPage(options?.logPage)
   const requestedDelayedPage = normalizeRequestedWorkerLogPage(options?.delayedPage)
   const requestedDeadLetterPage = normalizeRequestedWorkerLogPage(options?.deadLetterPage)

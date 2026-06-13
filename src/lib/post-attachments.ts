@@ -17,6 +17,7 @@ import {
   updatePostAttachment,
 } from "@/db/post-attachment-queries"
 import { findUploadsByIdsForUser } from "@/db/upload-queries"
+import { canAdminActorManageBoardWithPermission } from "@/lib/admin-scope-permissions"
 import { apiError } from "@/lib/api-route"
 import { countUserRepliesByPostId } from "@/db/comment-queries"
 import { applyPointDelta, prepareScopedPointDelta } from "@/lib/point-center"
@@ -25,6 +26,7 @@ import { getSiteSettings, type SiteSettingsData } from "@/lib/site-settings"
 import { isPublicReadablePostStatus } from "@/lib/post-types"
 import { isHttpUrl } from "@/lib/shared/url"
 import { isVipActive, type VipStateSource } from "@/lib/vip-status"
+import { resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
 import { normalizeUploadExtension } from "@/lib/upload-rules"
 
 export const DEFAULT_ATTACHMENT_ALLOWED_EXTENSIONS = ["zip", "rar", "7z", "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt"] as const
@@ -32,6 +34,7 @@ export const MAX_POST_ATTACHMENTS = 20
 
 type UploadRecord = Awaited<ReturnType<typeof findUploadsByIdsForUser>>[number]
 type PostAttachmentRecord = Prisma.PostAttachmentGetPayload<{ select: typeof postAttachmentSelect }>
+type PostAttachmentActionRecord = NonNullable<Awaited<ReturnType<typeof findPostAttachmentById>>>
 
 export interface PostAttachmentDraftPayload {
   id?: string
@@ -560,11 +563,35 @@ export async function getPurchasedPostAttachmentIds(postId: string, userId?: num
 
 interface AttachmentAccessContext {
   settings: SiteSettingsData
-  attachment: NonNullable<Awaited<ReturnType<typeof findPostAttachmentById>>>
+  attachment: PostAttachmentActionRecord
   hasPurchasedAccess: boolean
   userReplyCount: number
   viewerState: AttachmentViewerState
   isOwnerOrAdmin: boolean
+}
+
+async function canManageAttachmentPost(currentUser: AttachmentViewerInput, attachment: PostAttachmentActionRecord) {
+  if (currentUser.role !== "ADMIN" && currentUser.role !== "MODERATOR") {
+    return false
+  }
+
+  const adminActor = await resolveAdminActorFromSessionUser({
+    id: currentUser.id ?? 0,
+    username: "",
+    nickname: null,
+    role: currentUser.role,
+    status: "ACTIVE",
+  })
+
+  return Boolean(
+    adminActor
+    && await canAdminActorManageBoardWithPermission(
+      adminActor,
+      "admin.content.manage",
+      attachment.post.boardId,
+      attachment.post.board.zoneId,
+    ),
+  )
 }
 
 async function loadAttachmentAccessContext(params: {
@@ -582,7 +609,10 @@ async function loadAttachmentAccessContext(params: {
 
   const isOwnerOrAdmin = Boolean(
     params.currentUser?.id
-    && (params.currentUser.id === attachment.post.authorId || params.currentUser.role === "ADMIN"),
+    && (
+      params.currentUser.id === attachment.post.authorId
+      || await canManageAttachmentPost(params.currentUser, attachment)
+    ),
   )
 
   if (!isPublicReadablePostStatus(attachment.post.status) && !isOwnerOrAdmin) {

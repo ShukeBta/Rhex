@@ -6,6 +6,7 @@ import { apiError } from "@/lib/api-route"
 import { findFounderAdminId } from "@/db/admin-user-action-queries"
 import { getBlockedAdminRoleChangeMessage } from "@/lib/admin-user-permission-policy"
 import { canManageTargetUser } from "@/lib/admin-permission-policy"
+import { canAdminWithPermissionOverrides } from "@/lib/admin-permission-overrides"
 import { parseBrowserLocalDateTime } from "@/lib/browser-local-datetime"
 import { formatBrowserLocalDateTimeInput } from "@/lib/browser-local-datetime"
 import { parseBusinessDateTime } from "@/lib/formatters"
@@ -189,6 +190,10 @@ async function countDeletionBlockers(userId: number) {
 async function runRoleBulkAction(actor: AdminActor, users: BulkUserRecord[], role: UserRole, skippedReasons: Map<string, number>) {
   const targetUsers: BulkUserRecord[] = []
   const actorIsFounder = await findFounderAdminId() === actor.id
+  const touchesAdminRole = role === UserRole.ADMIN || users.some((user) => user.role === UserRole.ADMIN)
+  if (touchesAdminRole && !await canAdminWithPermissionOverrides(actor, "admin.users.manageAdmins", { isFounder: actorIsFounder })) {
+    apiError(403, "无权批量调整管理员账号")
+  }
 
   for (const user of users) {
     const blockedMessage = getBlockedAdminRoleChangeMessage({

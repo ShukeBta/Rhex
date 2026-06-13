@@ -19,6 +19,7 @@ export const GET = createAdminRouteHandler(async () => {
   errorMessage: "读取兑换码失败",
   logPrefix: "[api/admin/redeem-codes:GET] unexpected error",
   unauthorizedMessage: "无权访问",
+  permission: "admin.operations.manage",
 })
 
 export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
@@ -59,6 +60,7 @@ export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
   errorMessage: "兑换码生成失败",
   logPrefix: "[api/admin/redeem-codes:POST] unexpected error",
   unauthorizedMessage: "无权操作",
+  permission: "admin.operations.manage",
 })
 
 export const DELETE = createAdminRouteHandler(async ({ request }) => {
@@ -72,4 +74,5 @@ export const DELETE = createAdminRouteHandler(async ({ request }) => {
   errorMessage: "删除兑换码失败",
   logPrefix: "[api/admin/redeem-codes:DELETE] unexpected error",
   unauthorizedMessage: "无权操作",
+  permission: "admin.operations.manage",
 })

@@ -17,7 +17,9 @@ import { extractMentionTexts, stripUserLinkTokens } from "@/lib/mentions"
 import { logError, logInfo } from "@/lib/logger"
 import { createNotifications } from "@/lib/notification-writes"
 import { getSiteSettings } from "@/lib/site-settings"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import { requestInternalContentRevalidation } from "@/lib/internal-revalidation-client"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 import { getAiReplyConfig, getServerAiReplyConfig, isAiReplyConfigRunnable, type AiReplyAgentConfigData, type AiReplyConfigData } from "@/lib/ai-reply-config"
 import { resolveAiProvider, type AiProviderConfig } from "@/lib/ai/provider"
 import { runAiTask } from "@/lib/ai/service"
@@ -39,6 +41,15 @@ const AI_REPLY_DELETABLE_TASK_STATUSES = [
   AiReplyTaskStatus.FAILED,
   AiReplyTaskStatus.CANCELLED,
 ] as const
+
+async function ensureCanManageApps() {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.apps.manage",
+    "无权限访问应用后台",
+  )
+}
+
 type AiReplyTriggerReason = "mention" | "keyword" | "all-posts" | "board"
 
 type AiReplyTaskWorkerRecord = Awaited<ReturnType<typeof loadAiReplyTaskForWorker>>
@@ -1330,6 +1341,7 @@ export async function enqueueAiReplyForCommentMention(params: {
 }
 
 export async function getAiReplyAdminData(): Promise<AiReplyAdminData> {
+  await ensureCanManageApps()
   return getAiReplyAdminDataPage({ page: 1, autoCategorizePage: 1 })
 }
 
@@ -1337,6 +1349,8 @@ export async function getAiReplyAdminDataPage(options?: {
   page?: number | null
   autoCategorizePage?: number | null
 }): Promise<AiReplyAdminData> {
+  await ensureCanManageApps()
+
   const [config, autoCategorizeConfig] = await Promise.all([
     getAiReplyConfig(),
     getAutoCategorizeConfig(),
@@ -1554,6 +1568,8 @@ export async function getAiReplyAdminDataPage(options?: {
 }
 
 export async function deleteAiReplyTaskLog(taskId: string) {
+  await ensureCanManageApps()
+
   const task = await prisma.aiReplyTask.findUnique({
     where: { id: taskId },
     select: {
@@ -1576,6 +1592,8 @@ export async function deleteAiReplyTaskLog(taskId: string) {
 }
 
 export async function deleteAllAiReplyTaskLogs() {
+  await ensureCanManageApps()
+
   const result = await prisma.aiReplyTask.deleteMany({
     where: {
       status: {

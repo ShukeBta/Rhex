@@ -11,13 +11,7 @@ export const POST = createUserRouteHandler(async ({ request, currentUser }) => {
     postId,
     body,
     request,
-    currentUser: {
-      id: currentUser.id,
-      role: currentUser.role,
-      level: currentUser.level,
-      vipLevel: currentUser.vipLevel,
-      vipExpiresAt: currentUser.vipExpiresAt,
-    },
+    currentUser,
   })
 
   revalidateUpdatedPostMutation({

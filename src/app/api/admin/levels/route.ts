@@ -9,6 +9,7 @@ export const GET = createAdminRouteHandler(async () => {
   errorMessage: "读取等级设置失败",
   logPrefix: "[api/admin/levels:GET] unexpected error",
   unauthorizedMessage: "无权访问",
+  permission: "admin.operations.manage",
 })
 
 export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
@@ -30,4 +31,5 @@ export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
   errorMessage: "保存等级设置失败",
   logPrefix: "[api/admin/levels:POST] unexpected error",
   unauthorizedMessage: "无权操作",
+  permission: "admin.operations.manage",
 })

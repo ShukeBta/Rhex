@@ -63,6 +63,7 @@ export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
   errorMessage: "创建敏感词规则失败",
   logPrefix: "[api/admin/sensitive-words:POST] unexpected error",
   unauthorizedMessage: "无权执行后台操作",
+  permission: "admin.operations.manage",
 })
 
 export const PUT = createAdminRouteHandler(async ({ request, adminUser }) => {
@@ -82,6 +83,7 @@ export const PUT = createAdminRouteHandler(async ({ request, adminUser }) => {
   errorMessage: "更新敏感词规则失败",
   logPrefix: "[api/admin/sensitive-words:PUT] unexpected error",
   unauthorizedMessage: "无权执行后台操作",
+  permission: "admin.operations.manage",
 })
 
 export const DELETE = createAdminRouteHandler(async ({ request, adminUser }) => {
@@ -122,4 +124,5 @@ export const DELETE = createAdminRouteHandler(async ({ request, adminUser }) => 
   errorMessage: "删除敏感词规则失败",
   logPrefix: "[api/admin/sensitive-words:DELETE] unexpected error",
   unauthorizedMessage: "无权执行后台操作",
+  permission: "admin.operations.manage",
 })

@@ -40,4 +40,5 @@ export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
   logPrefix: "[api/admin/board-applications] unexpected error",
   unauthorizedMessage: "仅管理员可审核节点申请",
   allowModerator: false,
+  permission: "admin.operations.manage",
 })

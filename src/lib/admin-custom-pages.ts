@@ -141,7 +141,7 @@ function buildCustomPageUpdatePayload(
 }
 
 export async function getAdminCustomPageList(): Promise<AdminCustomPageItem[]> {
-  const currentUser = await requireAdminUser()
+  const currentUser = await requireAdminUser("admin.operations.manage")
   if (!currentUser) {
     apiError(403, "无权限访问自定义页面数据")
   }
@@ -153,7 +153,7 @@ export async function getAdminCustomPageList(): Promise<AdminCustomPageItem[]> {
 }
 
 export async function saveAdminCustomPage(input: AdminCustomPageInput) {
-  const currentUser = await requireAdminUser()
+  const currentUser = await requireAdminUser("admin.operations.manage")
   if (!currentUser) {
     apiError(403, "无权操作自定义页面")
   }
@@ -232,7 +232,7 @@ export async function saveAdminCustomPage(input: AdminCustomPageInput) {
 }
 
 export async function removeAdminCustomPage(id: string) {
-  const currentUser = await requireAdminUser()
+  const currentUser = await requireAdminUser("admin.operations.manage")
   if (!currentUser) {
     apiError(403, "无权删除自定义页面")
   }
@@ -254,7 +254,7 @@ export async function removeAdminCustomPage(id: string) {
 }
 
 export async function updateAdminCustomPageStatus(id: string, status: string) {
-  const currentUser = await requireAdminUser()
+  const currentUser = await requireAdminUser("admin.operations.manage")
   if (!currentUser) {
     apiError(403, "无权更新自定义页面")
   }

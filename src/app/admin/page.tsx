@@ -19,7 +19,7 @@ import { AdminSensitiveWordManager } from "@/components/admin/admin-sensitive-wo
 import { AdminBoardApplicationManager, StructureManager } from "@/components/admin/admin-structure-forms"
 import { AdminShell } from "@/components/admin/admin-shell"
 import { AdminUserList } from "@/components/admin/admin-user-list"
-import { getAdminComments, getAdminDashboardData, getAdminPosts, getAdminStructureData } from "@/lib/admin"
+import { getAdminBoardApplicationData, getAdminComments, getAdminDashboardData, getAdminPosts, getAdminStructureData } from "@/lib/admin"
 import { getAdminAnnouncementList } from "@/lib/admin-announcements"
 import { getAdminCustomPageList } from "@/lib/admin-custom-pages"
 import { getVerificationAdminData, getVerificationTypeOptions } from "@/lib/admin-verification-service"
@@ -29,6 +29,7 @@ import {
   getDefaultAdminSettingsSection,
   getAdminNavigationItem,
   getAllowedAdminTabsByPermission,
+  canAdminTierWithEffectivePermissions,
   type AdminTabKey,
   type AdminVerificationSubTabKey,
 } from "@/lib/admin-navigation"
@@ -75,6 +76,8 @@ export default async function AdminPage(props: PageProps<"/admin">) {
   const adminTier = permissionState.tier
   const effectivePermissionSet = new Set(permissionState.effectivePermissions)
   const allowedTabs = getAllowedAdminTabsByPermission(adminTier, effectivePermissionSet)
+  const canAccess = (permission: Parameters<typeof canAdminTierWithEffectivePermissions>[1]) =>
+    canAdminTierWithEffectivePermissions(adminTier, permission, effectivePermissionSet)
   if (allowedTabs.length === 0) {
     redirect("/")
   }
@@ -90,7 +93,7 @@ export default async function AdminPage(props: PageProps<"/admin">) {
   const currentVerificationSubTabValue = readSearchParam(searchParams?.verificationSubTab)
   const currentVerificationSubTab: AdminVerificationSubTabKey = currentVerificationSubTabValue === "reviews" ? "reviews" : "types"
 
-  if (tab === "settings" && effectivePermissionSet.has("admin.operations.manage")) {
+  if (tab === "settings" && (canAccess("admin.operations.manage") || canAccess("admin.siteSettings.manage"))) {
     const defaultSettingsSection = getDefaultAdminSettingsSection(adminTier, effectivePermissionSet)
     redirect(
       resolveAdminSettingsRoute({
@@ -156,19 +159,22 @@ export default async function AdminPage(props: PageProps<"/admin">) {
   const currentAttachmentPage = readSearchParam(searchParams?.attachmentPage) ?? "1"
   const currentAttachmentPageSize = readSearchParam(searchParams?.attachmentPageSize) ?? "20"
   const actorCanDemoteAdmins = actorIsFounder && tab === "users"
-  const canManageUsers = effectivePermissionSet.has("admin.users.manage")
-  const canManageOperations = effectivePermissionSet.has("admin.operations.manage")
-  const canViewLogs = effectivePermissionSet.has("admin.logs.view")
-  const canGrantBadges = effectivePermissionSet.has("admin.users.grantBadges")
-  const canGrantVerifications = effectivePermissionSet.has("admin.users.grantVerifications")
+  const canManageUsers = canAccess("admin.users.manage")
+  const canManageOperations = canAccess("admin.operations.manage")
+  const canViewLogs = canAccess("admin.logs.view")
+  const canGrantBadges = canAccess("admin.users.grantBadges")
+  const canGrantVerifications = canAccess("admin.users.grantVerifications")
 
-  const [dashboardData, structureData, adminUsers, filteredPosts, filteredComments, adminMessages, levelDefinitions, badges, badgeVerificationTypes, announcements, customPages, reports, attachments, sensitiveWordResult, logCenter, verificationAdminData] = await Promise.all([
-    effectivePermissionSet.has("admin.overview.view") && tab === "overview"
+  const [dashboardData, structureData, boardApplicationData, adminUsers, filteredPosts, filteredComments, adminMessages, levelDefinitions, badges, badgeVerificationTypes, announcements, customPages, reports, attachments, sensitiveWordResult, logCenter, verificationAdminData] = await Promise.all([
+    canAccess("admin.overview.view") && tab === "overview"
       ? getAdminDashboardData()
       : Promise.resolve<Awaited<ReturnType<typeof getAdminDashboardData>> | null>(null),
-    tab === "structure" || tab === "board-applications"
+    tab === "structure"
       ? getAdminStructureData()
       : Promise.resolve<Awaited<ReturnType<typeof getAdminStructureData>> | null>(null),
+    canManageOperations && tab === "board-applications"
+      ? getAdminBoardApplicationData()
+      : Promise.resolve<Awaited<ReturnType<typeof getAdminBoardApplicationData>> | null>(null),
     canManageUsers && tab === "users"
       ? getAdminUsers({
         keyword: currentUserKeyword || undefined,
@@ -287,7 +293,7 @@ export default async function AdminPage(props: PageProps<"/admin">) {
         {tab === "comments" ? <AdminCommentList data={filteredComments!} /> : null}
         {tab === "messages" ? <AdminMessageRecords data={adminMessages!} /> : null}
         {tab === "structure" ? <StructureManager zones={structureData!.zones} boards={structureData!.boardStatus} permissions={structureData!.permissions} canReviewBoardApplications={structureData!.canReviewBoardApplications} pendingBoardApplicationCount={structureData!.boardApplications.filter((item) => item.status === "PENDING").length} verificationTypes={structureData!.verificationTypes} badges={structureData!.badges} initialFilters={{ keyword: currentStructureKeyword, zoneId: currentStructureZoneId, boardStatus: currentStructureBoardStatus, posting: currentStructurePosting }} /> : null}
-        {tab === "board-applications" ? <AdminBoardApplicationManager zones={structureData!.zones} boardApplications={structureData!.boardApplications} canReviewBoardApplications={structureData!.canReviewBoardApplications} /> : null}
+        {tab === "board-applications" ? <AdminBoardApplicationManager zones={boardApplicationData!.zones} boardApplications={boardApplicationData!.boardApplications} canReviewBoardApplications={boardApplicationData!.canReviewBoardApplications} /> : null}
         {tab === "levels" ? <AdminLevelSettingsForm initialLevels={levelDefinitions} /> : null}
         {tab === "badges" ? <AdminBadgeManager initialLevelDefinitions={levelDefinitions} initialVerificationTypes={badgeVerificationTypes} initialBadges={badges.map((badge: BadgeItem) => ({
           id: badge.id,

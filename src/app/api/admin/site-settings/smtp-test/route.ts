@@ -44,4 +44,5 @@ export const POST = createAdminRouteHandler(async ({ request }) => {
   errorMessage: "发送测试邮件失败",
   logPrefix: "[api/admin/site-settings/smtp-test:POST] unexpected error",
   unauthorizedMessage: "无权操作",
+  permission: "admin.operations.manage",
 })

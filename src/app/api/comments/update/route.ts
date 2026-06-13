@@ -9,12 +9,7 @@ export const POST = createUserRouteHandler(async ({ request, currentUser }) => {
   const result = await updateCommentFlow({
     body,
     request,
-    currentUser: {
-      id: currentUser.id,
-      role: currentUser.role,
-      username: currentUser.username,
-      nickname: currentUser.nickname,
-    },
+    currentUser,
   })
 
   const targetId = typeof body?.commentId === "string" ? body.commentId : ""

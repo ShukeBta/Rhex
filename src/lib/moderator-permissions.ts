@@ -38,7 +38,9 @@ export interface AdminActor {
   }>
 }
 
-function mapAdminActor(record: SessionActor | ModeratorScopeRecord): AdminActor {
+export type AdminActorSource = Pick<SessionActor, "id" | "username" | "nickname" | "role" | "status">
+
+function mapAdminActor(record: AdminActorSource | ModeratorScopeRecord): AdminActor {
   return {
     id: record.id,
     username: record.username,
@@ -154,7 +156,7 @@ export function buildManagedCommentWhereInput(actor: AdminActor): Prisma.Comment
   return or.length > 0 ? { OR: or } : { id: { in: [] } }
 }
 
-export async function resolveAdminActorFromSessionUser(user: SessionActor | null): Promise<AdminActor | null> {
+export async function resolveAdminActorFromSessionUser(user: AdminActorSource | null): Promise<AdminActor | null> {
   if (!user || (user.role !== UserRole.ADMIN && user.role !== UserRole.MODERATOR)) {
     return null
   }

@@ -64,9 +64,18 @@ import { toAbsoluteSiteUrl } from "@/lib/site-origin"
 
 import { getZones } from "@/lib/zones"
 import { getCanonicalPostPath } from "@/lib/post-links"
-import { canManageBoard, getAvailablePinScopes, isSiteAdmin as isSiteAdminActor, resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
+import { canAdminActorManageBoardWithPermission } from "@/lib/admin-scope-permissions"
+import { getAvailablePinScopes, resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
 import { AddonSlotRenderer, AddonSurfaceRenderer } from "@/addons-host"
 import { formatCompactNumber, formatNumber } from "@/lib/formatters"
+
+interface AdminBoardOptionGroup {
+  zone: string
+  items: Array<{
+    value: string
+    label: string
+  }>
+}
 
 function buildUrlSearchParams(
   input?: Record<string, string | string[] | undefined>,
@@ -177,11 +186,28 @@ export default async function PostPage(props: PageProps<"/posts/[slug]">) {
   const boardAccessContextPromise = getBoardAccessContextByPostId(basePost.id)
   const boardAccessContext = await boardAccessContextPromise
   const adminActor = await adminActorPromise
-  const canManageThisPost = Boolean(adminActor && boardAccessContext && canManageBoard(adminActor, boardAccessContext.board.id, boardAccessContext.board.zoneId))
-  const isSiteAdmin = isSiteAdminActor(adminActor)
+  const canManageThisPost = Boolean(
+    adminActor
+    && boardAccessContext
+    && await canAdminActorManageBoardWithPermission(
+      adminActor,
+      "admin.content.manage",
+      boardAccessContext.board.id,
+      boardAccessContext.board.zoneId,
+    ),
+  )
+  const canManageComments = Boolean(
+    adminActor
+    && boardAccessContext
+    && await canAdminActorManageBoardWithPermission(
+      adminActor,
+      "admin.comments.manage",
+      boardAccessContext.board.id,
+      boardAccessContext.board.zoneId,
+    ),
+  )
   const isPostOwner = currentUser?.id === basePost.authorId
   const isOwnerOrManager = Boolean(isPostOwner || canManageThisPost)
-  const isOwnerOrSiteAdmin = Boolean(isPostOwner || isSiteAdmin)
   const canViewPendingPost = basePost.status === "PENDING" && isOwnerOrManager
   const canViewOfflinePost = basePost.status === "OFFLINE" && isOwnerOrManager
   const canViewModeratedPost = canViewPendingPost || canViewOfflinePost
@@ -223,14 +249,14 @@ export default async function PostPage(props: PageProps<"/posts/[slug]">) {
   const tipSummaryPromise = canViewRestrictedPost ? getPostTipSummary(basePost.id, currentUser?.id) : Promise.resolve(undefined)
   const redPacketSummaryPromise = canViewPostContent ? getPostRedPacketSummary(basePost.id, currentUser?.id) : Promise.resolve(undefined)
   const postAuctionSummaryPromise = basePost.type === "AUCTION" && canViewPostContent
-    ? getPostAuctionSummary(basePost.id, currentUser?.id, { isAdmin: isSiteAdmin })
+    ? getPostAuctionSummary(basePost.id, currentUser?.id, { isAdmin: canManageThisPost })
     : Promise.resolve(undefined)
   const postOfflineMetaPromise = currentUser?.id === basePost.authorId ? getPostOfflineActionMeta(basePost.id) : Promise.resolve(null)
   const anonymousMaskIdentityPromise = basePost.isAnonymous ? getAnonymousMaskDisplayIdentity() : Promise.resolve(null)
   const commentResultPromise = canViewComments
     ? getCommentsByPostId(basePost.id, { sort: currentSort, page: currentPage, pageSize: settings.commentPageSize, viewMode: currentCommentView }, {
       userId: currentUser?.id,
-      isAdmin: canManageThisPost,
+      isAdmin: canManageComments,
       postAuthorId: basePost.authorId,
       postIsAnonymous: basePost.isAnonymous,
       commentsVisibleToAuthorOnly: basePost.commentsVisibleToAuthorOnly,
@@ -331,6 +357,22 @@ export default async function PostPage(props: PageProps<"/posts/[slug]">) {
 
   const sidebarUser = await sidebarUserPromise
 
+  const canManageAdminBoard = async (boardSlug: string) => {
+    if (!adminActor) {
+      return false
+    }
+
+    const matchedBoard = boards.find((candidate) => candidate.slug === boardSlug)
+    return matchedBoard
+      ? canAdminActorManageBoardWithPermission(
+          adminActor,
+          "admin.content.manage",
+          matchedBoard.id,
+          matchedBoard.zoneId,
+        )
+      : false
+  }
+
   const groupedBoardOptions = zones
     .map((zone) => ({
       zone: zone.name,
@@ -351,22 +393,28 @@ export default async function PostPage(props: PageProps<"/posts/[slug]">) {
       label: board.name,
     }))
 
-  const filteredAdminBoardOptions = adminActor
-    ? groupedBoardOptions
-        .map((group) => ({
-          zone: group.zone,
-          items: group.items.filter((item) => {
-            const matchedBoard = boards.find((candidate) => candidate.slug === item.value)
-            return matchedBoard ? canManageBoard(adminActor, matchedBoard.id, matchedBoard.zoneId) : false
-          }),
-        }))
-        .filter((group) => group.items.length > 0)
-    : groupedBoardOptions
-  const filteredUngroupedBoards = adminActor
-    ? ungroupedBoards.filter((item) => {
-        const matchedBoard = boards.find((candidate) => candidate.slug === item.value)
-        return matchedBoard ? canManageBoard(adminActor, matchedBoard.id, matchedBoard.zoneId) : false
+  const filteredAdminBoardOptions: AdminBoardOptionGroup[] = []
+  for (const group of groupedBoardOptions) {
+    const filteredItems = adminActor
+      ? (await Promise.all(group.items.map(async (item) => ({
+          item,
+          allowed: await canManageAdminBoard(item.value),
+        })))).filter((result) => result.allowed).map((result) => result.item)
+      : group.items
+
+    if (filteredItems.length > 0) {
+      filteredAdminBoardOptions.push({
+        zone: group.zone,
+        items: filteredItems,
       })
+    }
+  }
+
+  const filteredUngroupedBoards = adminActor
+    ? (await Promise.all(ungroupedBoards.map(async (item) => ({
+        item,
+        allowed: await canManageAdminBoard(item.value),
+      })))).filter((result) => result.allowed).map((result) => result.item)
     : ungroupedBoards
   const adminBoardOptions = filteredUngroupedBoards.length > 0
     ? [...filteredAdminBoardOptions, { zone: "未分区节点", items: filteredUngroupedBoards }]
@@ -393,7 +441,7 @@ export default async function PostPage(props: PageProps<"/posts/[slug]">) {
       viewer: currentUser,
       userReplyCount,
       hasPurchasedAccess: purchasedAttachmentIds.has(attachment.id),
-      isOwnerOrAdmin: isOwnerOrSiteAdmin,
+      isOwnerOrAdmin: isOwnerOrManager,
     })
 
     return {
@@ -759,9 +807,9 @@ export default async function PostPage(props: PageProps<"/posts/[slug]">) {
                         anonymousReplyEnabled={canReplyAsAnonymous}
                         anonymousReplyDefaultChecked={settings.anonymousPostDefaultReplyAnonymous}
                         anonymousReplySwitchVisible={canReplyAsAnonymous && settings.anonymousPostAllowReplySwitch}
-                        isAdmin={canManageThisPost}
+                        isAdmin={canManageComments}
                         adminRole={adminActor?.role ?? null}
-                        canPinComment={Boolean(currentUser?.id === displayPost.authorId || isSiteAdmin)}
+                        canPinComment={Boolean(currentUser?.id === displayPost.authorId || canManageComments)}
                         markdownEmojiMap={settings.markdownEmojiMap}
                         commentEditWindowMinutes={settings.commentEditableMinutes}
                         initialVisibleReplies={settings.commentInitialVisibleReplies}

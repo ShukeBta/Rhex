@@ -17,6 +17,7 @@ export const GET = createAdminRouteHandler(async () => {
   errorMessage: "获取任务列表失败",
   logPrefix: "[api/admin/tasks:GET] unexpected error",
   unauthorizedMessage: "无权访问",
+  permission: "admin.operations.manage",
 })
 
 export const POST = createAdminRouteHandler(async ({ request }) => {
@@ -68,4 +69,5 @@ export const POST = createAdminRouteHandler(async ({ request }) => {
   errorMessage: "任务操作失败",
   logPrefix: "[api/admin/tasks:POST] unexpected error",
   unauthorizedMessage: "无权操作",
+  permission: "admin.operations.manage",
 })

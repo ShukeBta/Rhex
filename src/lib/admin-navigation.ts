@@ -465,7 +465,7 @@ export function getAllowedAdminTabsByPermission(
 ) {
   return adminTabs.filter((tab) => {
     const item = getAdminNavigationItem(tab)
-    return !item.permission || canAdminByTier(tier, item.permission, effectivePermissions)
+    return canAccessAdminNavigationItem(item, tier, effectivePermissions)
   })
 }
 
@@ -473,6 +473,10 @@ export function getAllowedAdminSettingsSections(
   tier: AdminManagementTier,
   effectivePermissions?: ReadonlySet<AdminPermissionKey>,
 ) {
+  if (tier === "SUPER_ADMIN") {
+    return adminSettingsSections
+  }
+
   if (!effectivePermissions) {
     return adminSettingsSections.filter((section) => adminSettingsSectionsByTier[tier].has(section))
   }
@@ -485,6 +489,10 @@ export function canAccessAdminSettingsSection(
   section: AdminSettingsSectionKey,
   effectivePermissions?: ReadonlySet<AdminPermissionKey>,
 ) {
+  if (tier === "SUPER_ADMIN") {
+    return true
+  }
+
   if (!effectivePermissions) {
     return adminSettingsSectionsByTier[tier].has(section)
   }
@@ -508,7 +516,7 @@ export function getAdminNavigation(
   const visibleItems = items.filter((item) => !item.hiddenInNavigation)
 
   if (tier) {
-    return visibleItems.filter((item) => !item.permission || canAdminByTier(tier, item.permission, effectivePermissions))
+    return visibleItems.filter((item) => canAccessAdminNavigationItem(item, tier, effectivePermissions))
   }
 
   if (role === "ADMIN") {
@@ -564,11 +572,28 @@ export function getAdminSettingsGroups(
     .filter((group) => group.sections.length > 0)
 }
 
-function canAdminByTier(
+function canAccessAdminNavigationItem(
+  item: AdminNavigationItem,
+  tier: AdminManagementTier,
+  effectivePermissions?: ReadonlySet<AdminPermissionKey>,
+) {
+  if (item.key === "settings") {
+    return canAdminTierWithEffectivePermissions(tier, "admin.operations.manage", effectivePermissions)
+      || canAdminTierWithEffectivePermissions(tier, "admin.siteSettings.manage", effectivePermissions)
+  }
+
+  return !item.permission || canAdminTierWithEffectivePermissions(tier, item.permission, effectivePermissions)
+}
+
+export function canAdminTierWithEffectivePermissions(
   tier: AdminManagementTier,
   permission: AdminPermissionKey,
   effectivePermissions?: ReadonlySet<AdminPermissionKey>,
 ) {
+  if (tier === "SUPER_ADMIN") {
+    return true
+  }
+
   if (effectivePermissions) {
     return effectivePermissions.has(permission)
   }

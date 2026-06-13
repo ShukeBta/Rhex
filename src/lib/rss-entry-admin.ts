@@ -11,12 +11,22 @@ import {
   listRssEntrySourceOptions,
   updateRssEntryRecord,
 } from "@/db/rss-entry-admin-queries"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import { apiError } from "@/lib/api-route"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 import { normalizePageSize, normalizePositiveInteger, normalizeText, normalizeTrimmedText } from "@/lib/shared/normalizers"
 import { normalizeHttpUrl } from "@/lib/shared/url"
 
 const RSS_ENTRY_PAGE_SIZE_OPTIONS = [20, 50, 100] as const
 const RSS_ENTRY_DEFAULT_PAGE_SIZE = 20
+
+async function ensureCanManageRssEntries() {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.apps.manage",
+    "无权限管理 RSS 采集数据",
+  )
+}
 
 export interface RssEntryAdminListItem {
   id: string
@@ -172,6 +182,8 @@ function mapEntryItem(record: Awaited<ReturnType<typeof listRssEntriesPage>>[num
 }
 
 export async function getRssEntryAdminPageData(query: RssEntryAdminQuery = {}): Promise<RssEntryAdminPageData> {
+  await ensureCanManageRssEntries()
+
   const normalized = {
     keyword: normalizeTrimmedText(query.keyword, 100),
     sourceId: normalizeText(query.sourceId),
@@ -230,6 +242,8 @@ export async function updateRssEntry(input: {
   reviewNote?: unknown
   adminUserId?: number
 }) {
+  await ensureCanManageRssEntries()
+
   const entryId = normalizeText(input.entryId)
   if (!entryId) {
     apiError(400, "缺少条目 ID")
@@ -274,6 +288,8 @@ export async function reviewRssEntry(input: {
   reviewNote?: unknown
   adminUserId: number
 }) {
+  await ensureCanManageRssEntries()
+
   const entryId = normalizeText(input.entryId)
   if (!entryId) {
     apiError(400, "缺少条目 ID")
@@ -300,6 +316,8 @@ export async function reviewRssEntry(input: {
 }
 
 export async function deleteRssEntry(entryId: string) {
+  await ensureCanManageRssEntries()
+
   const normalizedId = normalizeText(entryId)
   if (!normalizedId) {
     apiError(400, "缺少条目 ID")
@@ -320,6 +338,8 @@ export async function batchReviewRssEntries(input: {
   reviewNote?: unknown
   adminUserId: number
 }) {
+  await ensureCanManageRssEntries()
+
   const ids = normalizeEntryIds(input.entryIds)
   if (ids.length === 0) {
     apiError(400, "请至少选择一条采集数据")
@@ -348,6 +368,8 @@ export async function batchReviewRssEntries(input: {
 }
 
 export async function batchDeleteRssEntries(entryIds: unknown) {
+  await ensureCanManageRssEntries()
+
   const ids = normalizeEntryIds(entryIds)
   if (ids.length === 0) {
     apiError(400, "请至少选择一条采集数据")

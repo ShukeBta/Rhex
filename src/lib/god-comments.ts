@@ -1,6 +1,9 @@
 import { GodCommentSource, Prisma } from "@/db/types"
 import { prisma } from "@/db/client"
+import { apiError } from "@/lib/api-route"
 import { DEFAULT_GOD_COMMENT_AUTO_LIKE_THRESHOLD } from "@/lib/god-comment-settings"
+import { getAdminManagementTier } from "@/lib/admin-permission-policy"
+import type { AdminActor } from "@/lib/moderator-permissions"
 import { revalidateUserSurfaceCache } from "@/lib/user-surface"
 
 export interface GodCommentPromotionResult {
@@ -290,8 +293,20 @@ export async function maybePromoteGodCommentByLikes(input: {
 export async function toggleGodCommentByAdmin(input: {
   commentId: string
   adminUserId: number
+  actor: AdminActor
   action: "mark" | "unmark"
 }) {
+  const { ensureAdminActorPermission } = await import("@/lib/admin-scope-permissions")
+
+  await ensureAdminActorPermission(
+    input.actor,
+    "admin.comments.manage",
+    "无权操作神评",
+  )
+  if (getAdminManagementTier(input.actor) === "REVIEWER") {
+    apiError(403, "审核员不能操作神评")
+  }
+
   return input.action === "mark"
     ? promoteGodComment({
         commentId: input.commentId,

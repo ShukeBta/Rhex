@@ -1,8 +1,18 @@
 import { prisma } from "@/db/client"
 import { findPendingRssSourceApplicationByFeedUrl, findRssSourceByFeedUrl } from "@/db/rss-harvest-queries"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import { apiError } from "@/lib/api-route"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 import { createRssSource } from "@/lib/rss-harvest"
 import { normalizeHttpUrl } from "@/lib/shared/url"
+
+async function ensureCanReviewRssSourceApplications() {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.apps.manage",
+    "无权限审核 RSS 收录申请",
+  )
+}
 
 function normalizeApplicationInput(input: Record<string, unknown>) {
   const siteName = typeof input.siteName === "string" ? input.siteName.trim() : ""
@@ -73,6 +83,8 @@ export async function approveRssSourceApplication(input: {
   reviewerId: number
   reviewNote?: string | null
 }) {
+  await ensureCanReviewRssSourceApplications()
+
   const application = await prisma.rssSourceApplication.findUnique({
     where: { id: input.applicationId },
     select: {
@@ -121,6 +133,8 @@ export async function rejectRssSourceApplication(input: {
   reviewerId: number
   reviewNote?: string | null
 }) {
+  await ensureCanReviewRssSourceApplications()
+
   const application = await prisma.rssSourceApplication.findUnique({
     where: { id: input.applicationId },
     select: {

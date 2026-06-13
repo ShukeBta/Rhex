@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto"
 import { PaymentAttemptStatus, PaymentFulfillmentStatus, PaymentOrderStatus, Prisma } from "@prisma/client"
 
 import { prisma } from "@/db/client"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import { apiError } from "@/lib/api-route"
 import {
   createAlipayCheckoutPresentation,
@@ -42,8 +43,17 @@ import type {
 import { getSiteSettings } from "@/lib/site-settings"
 import { toAbsoluteSiteUrl } from "@/lib/site-origin"
 import { revalidateUserSurfaceCache } from "@/lib/user-surface"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 
 const PAYMENT_GATEWAY_ADMIN_RECENT_ORDERS_PAGE_SIZE = 12
+
+async function ensureCanManagePaymentGatewayAdmin() {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.apps.manage",
+    "无权限访问支付网关后台",
+  )
+}
 
 function formatUserDisplayName(user: { username: string; nickname: string | null } | null) {
   if (!user) {
@@ -395,6 +405,8 @@ async function emitAddonPaymentPaidEvent(input: {
 }
 
 export async function getPaymentGatewayAdminData(options?: { page?: number | null }): Promise<PaymentGatewayAdminData> {
+  await ensureCanManagePaymentGatewayAdmin()
+
   const [config, channelDefinitions, providerEntries, totalRecentOrders, clearableRecentOrderCount] = await Promise.all([
     getPaymentGatewayConfig(),
     listPaymentGatewayChannelDefinitions(),
@@ -491,6 +503,8 @@ export async function getPaymentGatewayAdminData(options?: { page?: number | nul
 }
 
 export async function clearPaymentGatewayAdminLogs() {
+  await ensureCanManagePaymentGatewayAdmin()
+
   const deletableOrders = await prisma.paymentOrder.findMany({
     where: {
       OR: [

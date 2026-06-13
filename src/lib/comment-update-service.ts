@@ -3,21 +3,19 @@ import { createCommentMentionNotifications, updateCommentContentById, findEditab
 import { queryAddonComments } from "@/addons-host/runtime/comments"
 import { executeAddonActionHook, executeAddonWaterfallHook } from "@/addons-host/runtime/hooks"
 import { resolveHookedStringValue } from "@/lib/addon-hook-values"
+import { canAdminActorManageBoardWithPermission } from "@/lib/admin-scope-permissions"
 import { apiError } from "@/lib/api-route"
+import type { SessionActor } from "@/lib/auth"
 import { enforceSensitiveText } from "@/lib/content-safety"
 import { extractMentionTexts, findMentionUsers, resolveMentionsInText } from "@/lib/comment-mentions"
+import { resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
 import { getSiteSettings } from "@/lib/site-settings"
 import { validateCommentPayload } from "@/lib/validators"
 
 export async function updateCommentFlow(input: {
   body: unknown
   request: Request
-  currentUser: {
-    id: number
-    role?: string | null
-    username?: string | null
-    nickname?: string | null
-  }
+  currentUser: SessionActor
 }) {
   const settings = await getSiteSettings()
   const validated = validateCommentPayload(input.body, {
@@ -50,14 +48,23 @@ export async function updateCommentFlow(input: {
     apiError(404, "评论不存在或不可编辑")
   }
 
-  const isAdmin = input.currentUser.role === "ADMIN"
+  const adminActor = await resolveAdminActorFromSessionUser(input.currentUser)
+  const canManageComment = Boolean(
+    adminActor
+    && await canAdminActorManageBoardWithPermission(
+      adminActor,
+      "admin.comments.manage",
+      comment.post.boardId,
+      comment.post.board.zoneId,
+    ),
+  )
   const isOwner = comment.userId === input.currentUser.id
 
-  if (!isAdmin && !isOwner) {
+  if (!canManageComment && !isOwner) {
     apiError(403, "没有权限编辑该评论")
   }
 
-  if (!isAdmin) {
+  if (!canManageComment) {
     const editWindowMinutes = Math.max(0, settings.commentEditableMinutes)
     const expiresAt = new Date(comment.createdAt).getTime() + editWindowMinutes * 60 * 1000
     if (Date.now() > expiresAt) {

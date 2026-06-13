@@ -54,7 +54,7 @@ import {
   attachPostListTipSummaries,
   shouldAttachPostListTipSummaries,
 } from "@/lib/post-list-tipping"
-import { resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
+import { resolveContentVisibleAdminActor } from "@/lib/admin-scope-permissions"
 import { getRssHomeDisplaySettings } from "@/lib/rss-harvest"
 import { getRssUniverseFeedPage } from "@/lib/rss-public-feed"
 import {
@@ -221,7 +221,7 @@ export async function HomeFeedPage({
     || Boolean(currentSort && shouldAttachPostListTipSummaries(settings.homeFeedPostListDisplayMode))
   const currentUser = needsServerCurrentUser ? await getCurrentUser() : null
   const addonHookSearchParams = buildAddonHookSearchParams(resolvedSearchParams)
-  const adminActor = currentUser ? await resolveAdminActorFromSessionUser(currentUser) : null
+  const adminActor = currentUser ? await resolveContentVisibleAdminActor(currentUser) : null
   const postListViewer = currentUser
     ? {
         userId: currentUser.id,

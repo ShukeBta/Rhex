@@ -1,6 +1,12 @@
 import type { BoardSidebarLinkItem } from "@/lib/board-sidebar-config"
 import type { BoardItem, ZoneItem } from "@/lib/admin-structure-management"
 
+export interface BoardApplicationZoneOption {
+  id: string
+  name: string
+  slug: string
+}
+
 export interface StructureManagerProps {
   zones: ZoneItem[]
   boards: BoardItem[]
@@ -71,7 +77,7 @@ export interface BoardApplicationItem {
 }
 
 export interface AdminBoardApplicationManagerProps {
-  zones: ZoneItem[]
+  zones: BoardApplicationZoneOption[]
   boardApplications: BoardApplicationItem[]
   canReviewBoardApplications: boolean
 }

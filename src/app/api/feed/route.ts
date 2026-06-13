@@ -2,7 +2,7 @@ import { apiSuccess, createRouteHandler } from "@/lib/api-route"
 import { buildHookedFeedDisplayItems } from "@/lib/addon-feed-posts"
 import { getSessionActorFromRequest } from "@/lib/auth"
 import { getLatestFeed, type FeedSort } from "@/lib/forum-feed"
-import { resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
+import { resolveContentVisibleAdminActor } from "@/lib/admin-scope-permissions"
 import {
   attachPostListTipSummaries,
   shouldAttachPostListTipSummaries,
@@ -25,7 +25,7 @@ export const GET = createRouteHandler(async ({ request }) => {
   const [currentUser, settings] = await Promise.all([getSessionActorFromRequest(request), getSiteSettings()])
   const result = await getLatestFeed(page, settings.homeFeedPostPageSize, sort, currentUser?.id, settings.homeHotRecentWindowHours, {
     userId: currentUser?.id ?? null,
-    adminActor: await resolveAdminActorFromSessionUser(currentUser),
+    adminActor: await resolveContentVisibleAdminActor(currentUser),
   })
   const pathname = sort === "new"
     ? "/new"

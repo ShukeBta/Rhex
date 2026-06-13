@@ -1,5 +1,6 @@
 import { findCommentPositionByPostId } from "@/db/comment-queries"
 import { apiError, apiSuccess, createAdminRouteHandler, readJsonBody, readOptionalNumberField, requireStringField } from "@/lib/api-route"
+import { canAdminActorManageBoardWithPermission } from "@/lib/admin-scope-permissions"
 import { toggleGodCommentByAdmin } from "@/lib/god-comments"
 import { revalidatePostCommentCache } from "@/lib/post-detail-cache"
 import { getSiteSettings } from "@/lib/site-settings"
@@ -13,6 +14,10 @@ export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
   const sort = body.sort === "newest" ? "newest" : "oldest"
   const comment = await ensureCanManageComment(adminUser, commentId)
 
+  if (!await canAdminActorManageBoardWithPermission(adminUser, "admin.comments.manage", comment.post.boardId, comment.post.board.zoneId)) {
+    apiError(403, "无权操作神评")
+  }
+
   if (comment.parentId) {
     apiError(400, "仅支持将一级评论设为神评")
   }
@@ -20,6 +25,7 @@ export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
   const result = await toggleGodCommentByAdmin({
     commentId,
     adminUserId: adminUser.id,
+    actor: adminUser,
     action,
   })
   revalidatePostCommentCache({ postId: comment.postId })

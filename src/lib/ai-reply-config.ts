@@ -29,6 +29,17 @@ const AI_REPLY_DEFAULTS = {
   commentReplyPrompt: "当有人在评论里 @你 时，请结合主楼和当前评论链语义，在楼中楼直接回应当前评论。",
 } as const
 
+async function ensureCanManageAiReplyConfig() {
+  const { ensureAdminActorPermission } = await import("@/lib/admin-scope-permissions")
+  const { requireSiteAdminActor } = await import("@/lib/moderator-permissions")
+
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.apps.manage",
+    "无权限修改 AI 回复配置",
+  )
+}
+
 export interface AiReplyConfigData {
   enabled: boolean
   baseUrl: string
@@ -425,6 +436,8 @@ export async function resolveAiReplyConfigDraftFromAdminInput(body: JsonObject) 
 }
 
 export async function updateAiReplyConfigFromAdminInput(body: JsonObject): Promise<AiReplyConfigData> {
+  await ensureCanManageAiReplyConfig()
+
   const resolved = await resolveAiReplyConfigDraftFromAdminInput(body)
   await updateAiAppConfig(AI_REPLY_APP_KEY, {
     record: resolved.record,

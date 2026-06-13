@@ -20,6 +20,8 @@ import {
 
 
 import { PublicRouteError } from "@/lib/public-route-error"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 import { applyPointDelta, prepareScopedPointDelta } from "@/lib/point-center"
 import { getSiteSettings } from "@/lib/site-settings"
 
@@ -146,6 +148,12 @@ export async function createRedeemCodes(input: {
   note?: string | null
   expiresAt?: Date | null
 }) {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.operations.manage",
+    "无权操作兑换码",
+  )
+
   const count = Math.min(100, Math.max(1, Math.trunc(input.count)))
   const points = Math.max(1, Math.trunc(input.points))
   const codeCategory = normalizeRedeemCodeCategory(input.codeCategory)
@@ -181,12 +189,24 @@ export async function createRedeemCodes(input: {
 }
 
 export async function getRedeemCodeList(limit = 100): Promise<RedeemCodeItem[]> {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.operations.manage",
+    "无权限访问兑换码",
+  )
+
   const rows = await listRedeemCodes(limit)
 
   return rows.map((row) => toRedeemCodeItem(row as RedeemCodeRowWithRelations))
 }
 
 export async function deleteRedeemCodes(input: { scope: "single" | "used" | "unused" | "all"; id?: string }) {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.operations.manage",
+    "无权操作兑换码",
+  )
+
   if (input.scope === "single") {
     const id = input.id?.trim()
     if (!id) {

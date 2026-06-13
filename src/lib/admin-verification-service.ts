@@ -9,8 +9,10 @@ import {
   updateVerificationTypeRecord,
 } from "@/db/admin-verification-queries"
 import { apiError, type JsonObject } from "@/lib/api-route"
+import { canAdminActorUsePermission, ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import { getRequestIp, writeAdminLog } from "@/lib/admin"
 import type { AdminActor } from "@/lib/moderator-permissions"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 import { createSystemNotification } from "@/lib/notification-writes"
 import { getUserDisplayName } from "@/lib/user-display"
 import { revalidateUserProfileMutation } from "@/lib/user-profile-revalidation"
@@ -66,6 +68,12 @@ function buildVerificationReviewNotification(params: {
 }
 
 export async function getVerificationAdminData() {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.users.grantVerifications",
+    "无权限访问认证管理",
+  )
+
   const [types, applications] = await Promise.all([
     findAdminVerificationTypes(),
     findRecentVerificationApplications(),
@@ -129,6 +137,14 @@ export async function getVerificationAdminData() {
 }
 
 export async function getVerificationTypeOptions() {
+  const actor = await requireSiteAdminActor()
+  const canReadOptions = await canAdminActorUsePermission(actor, "admin.users.grantVerifications")
+    || await canAdminActorUsePermission(actor, "admin.users.grantBadges")
+
+  if (!canReadOptions) {
+    apiError(403, "无权限访问认证类型")
+  }
+
   const types = await findAdminVerificationTypes()
 
   return types.map((type) => ({
@@ -144,6 +160,8 @@ export async function createVerificationType(params: {
   admin: AdminActor
   request: Request
 }) {
+  await ensureAdminActorPermission(params.admin, "admin.users.grantVerifications", "无权操作认证管理")
+
   const payload = buildVerificationTypeWriteInput(params.body)
   const { name, slug } = payload
 
@@ -162,6 +180,8 @@ export async function updateVerificationTypeOrReview(params: {
   admin: AdminActor
   request: Request
 }) {
+  await ensureAdminActorPermission(params.admin, "admin.users.grantVerifications", "无权操作认证管理")
+
   const id = normalizeText(params.body.id)
   const action = normalizeText(params.body.action)
   const requestIp = getRequestIp(params.request)
@@ -243,6 +263,8 @@ export async function deleteVerificationType(params: {
   admin: AdminActor
   request: Request
 }) {
+  await ensureAdminActorPermission(params.admin, "admin.users.grantVerifications", "无权操作认证管理")
+
   const id = normalizeText(params.body.id)
 
   if (!id) {

@@ -2,6 +2,7 @@ import { countAdminMessageSummary, findAdminMessageConversationDetail, findAdmin
 import { ConversationKind, type Prisma } from "@/db/types"
 
 import { apiError } from "@/lib/api-route"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import { formatDateTime } from "@/lib/formatters"
 import { summarizeMessagePreview } from "@/lib/message-media"
 import { requireSiteAdminActor } from "@/lib/moderator-permissions"
@@ -213,6 +214,7 @@ export async function getAdminMessages(query: AdminMessageQuery = {}): Promise<A
   if (!actor) {
     apiError(403, "无权限访问私信记录")
   }
+  await ensureAdminActorPermission(actor, "admin.operations.manage", "无权限访问私信记录")
 
   const normalizedQuery = normalizeAdminMessageQuery(query)
   const where = buildAdminMessageWhere(normalizedQuery)

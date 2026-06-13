@@ -11,6 +11,8 @@ import { getCurrentUser } from "@/lib/auth"
 import { buildLoginHrefWithRedirect } from "@/lib/auth-redirect"
 import { getBoards, type SiteBoardItem } from "@/lib/boards"
 import { getLevelDefinitions } from "@/lib/level-system"
+import { canAdminActorManageBoardWithPermission } from "@/lib/admin-scope-permissions"
+import { resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
 import { getAutoCategorizeConfig } from "@/lib/ai/capabilities/auto-categorize-config"
 import { parsePostContentDocument } from "@/lib/post-content"
 import { replacePostCardEmbedTokensWithUrls } from "@/lib/post-card-embed"
@@ -136,9 +138,21 @@ export default async function WritePage(props: PageProps<"/write">) {
   const replyUnlockBlock = contentDocument?.blocks.find((block) => block.type === "REPLY_UNLOCK")
   const purchaseUnlockBlock = contentDocument?.blocks.find((block) => block.type === "PURCHASE_UNLOCK")
 
-  const isAdmin = user.role === "ADMIN"
-  const canEditThisPost = Boolean(editingPost && (editingPost.authorId === user.id || isAdmin))
-  const isStillEditable = Boolean(editingPost && isPostStillEditable(editingPost.createdAt, settings.postEditableMinutes)) || isAdmin
+  const adminActor = editingPost && (user.role === "ADMIN" || user.role === "MODERATOR")
+    ? await resolveAdminActorFromSessionUser(user)
+    : null
+  const canManageEditingPost = Boolean(
+    editingPost
+    && adminActor
+    && await canAdminActorManageBoardWithPermission(
+      adminActor,
+      "admin.content.manage",
+      editingPost.boardId,
+      editingPost.board.zoneId,
+    ),
+  )
+  const canEditThisPost = Boolean(editingPost && (editingPost.authorId === user.id || canManageEditingPost))
+  const isStillEditable = Boolean(editingPost && isPostStillEditable(editingPost.createdAt, settings.postEditableMinutes)) || canManageEditingPost
   const addonFormSlots = {
     addonFormBefore: <AddonSlotRenderer slot="post.create.form.before" />,
     addonFormAfter: <AddonSlotRenderer slot="post.create.form.after" />,

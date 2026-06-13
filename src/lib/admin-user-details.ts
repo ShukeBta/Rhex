@@ -26,6 +26,7 @@ import {
   getEffectiveAdminPermissionKeys,
 } from "@/lib/admin-permission-policy"
 import { buildPointEffectSummaryText, resolvePointLogAuditPresentation } from "@/lib/point-log-audit"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 import { resolveUserProfileSettings } from "@/lib/user-profile-settings"
 
@@ -58,6 +59,7 @@ export async function getAdminUserDetail(userId: number): Promise<AdminUserDetai
   if (!actor) {
     apiError(403, "无权限访问用户详情")
   }
+  await ensureAdminActorPermission(actor, "admin.users.manage", "无权限访问用户详情")
 
   const [user, availableBadges, loginTotal, loginLogs, checkInTotal, checkInLogs, pointTotal, pointLogs, uploadTotal, uploads, adminActionTotal, adminActionLogs, founderAdminId] = await Promise.all([
     findAdminUserDetailById(userId),

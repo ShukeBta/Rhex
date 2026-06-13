@@ -12,6 +12,7 @@ import {
   ADMIN_PERMISSION_CATALOG,
   isAdminPermissionKey,
   isCoreAdminPermission,
+  isCorePermissionCatalogItem,
 } from "@/lib/admin-permission-catalog"
 import {
   canAdmin,
@@ -108,7 +109,7 @@ export function getEditableAdminPermissionKeys(params: {
   }
 
   return ADMIN_PERMISSION_CATALOG
-    .filter((item) => !item.coreOnly)
+    .filter((item) => !isCorePermissionCatalogItem(item))
     .map((item) => item.key)
 }
 

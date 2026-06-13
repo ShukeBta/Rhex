@@ -384,6 +384,7 @@ export const GET = createAdminRouteHandler(async () => {
   errorMessage: "读取勋章列表失败",
   logPrefix: "[api/admin/badges:GET] unexpected error",
   unauthorizedMessage: "无权执行后台操作",
+  permission: "admin.users.grantBadges",
 })
 
 export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
@@ -429,6 +430,7 @@ export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
   errorMessage: "创建勋章失败",
   logPrefix: "[api/admin/badges:POST] unexpected error",
   unauthorizedMessage: "无权执行后台操作",
+  permission: "admin.users.grantBadges",
 })
 
 export const PUT = createAdminRouteHandler(async ({ request, adminUser }) => {
@@ -484,6 +486,7 @@ export const PUT = createAdminRouteHandler(async ({ request, adminUser }) => {
   errorMessage: "更新勋章失败",
   logPrefix: "[api/admin/badges:PUT] unexpected error",
   unauthorizedMessage: "无权执行后台操作",
+  permission: "admin.users.grantBadges",
 })
 
 export const DELETE = createAdminRouteHandler(async ({ request, adminUser }) => {
@@ -504,4 +507,5 @@ export const DELETE = createAdminRouteHandler(async ({ request, adminUser }) => 
   errorMessage: "删除勋章失败",
   logPrefix: "[api/admin/badges:DELETE] unexpected error",
   unauthorizedMessage: "无权执行后台操作",
+  permission: "admin.users.grantBadges",
 })

@@ -2,6 +2,7 @@ import { UserRole, UserStatus } from "@/db/types"
 
 import { findModeratorScopeSetup, replaceModeratorScopes } from "@/db/admin-moderator-scope-queries"
 import { apiError, type JsonObject } from "@/lib/api-route"
+import { canAdminWithPermissionOverrides } from "@/lib/admin-permission-overrides"
 import type { AdminActor } from "@/lib/moderator-permissions"
 import { canManageBoard, canManageZone, isSiteAdmin } from "@/lib/moderator-permissions"
 
@@ -41,6 +42,10 @@ export async function updateModeratorScopes(params: {
   actor: AdminActor
   body: JsonObject
 }) {
+  if (!await canAdminWithPermissionOverrides(params.actor, "admin.structure.assignModerators")) {
+    apiError(403, "无权配置版主管辖范围")
+  }
+
   const rawUserId = params.body.userId
   const userId = typeof rawUserId === "number" ? rawUserId : Number(rawUserId)
   if (!Number.isInteger(userId) || userId <= 0) {

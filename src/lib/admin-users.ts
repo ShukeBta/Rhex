@@ -8,6 +8,7 @@ import { normalizePageSize, normalizePositiveInteger } from "@/lib/shared/normal
 
 import type { AdminUserListResult } from "@/lib/admin-user-management"
 import { apiError } from "@/lib/api-route"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 
 
@@ -44,6 +45,7 @@ export async function getAdminUsers(options: GetAdminUsersOptions = {}): Promise
   if (!actor) {
     apiError(403, "无权限访问用户管理")
   }
+  await ensureAdminActorPermission(actor, "admin.users.manage", "无权限访问用户管理")
 
   const keyword = String(options.keyword ?? "").trim()
   const role = userRoleValues.has(options.role as UserRole) ? String(options.role) : "ALL"

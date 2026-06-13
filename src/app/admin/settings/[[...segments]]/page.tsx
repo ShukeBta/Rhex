@@ -25,6 +25,7 @@ import {
   resolveAdminSettingsRouteFromSegments,
 } from "@/lib/admin-settings-navigation"
 import {
+  canAdminTierWithEffectivePermissions,
   canAccessAdminSettingsSection,
   getDefaultAdminSettingsSection,
   sectionsRequiringSiteSettings,
@@ -72,8 +73,10 @@ export default async function AdminSettingsPage(
   const permissionState = await resolveAdminPermissionState(admin)
   const adminTier = permissionState.tier
   const effectivePermissionSet = new Set(permissionState.effectivePermissions)
+  const canAccess = (permission: Parameters<typeof canAdminTierWithEffectivePermissions>[1]) =>
+    canAdminTierWithEffectivePermissions(adminTier, permission, effectivePermissionSet)
 
-  if (!effectivePermissionSet.has("admin.operations.manage") && !effectivePermissionSet.has("admin.siteSettings.manage")) {
+  if (!canAccess("admin.operations.manage") && !canAccess("admin.siteSettings.manage")) {
     redirect("/admin")
   }
 

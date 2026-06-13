@@ -17,6 +17,7 @@ export const GET = createAdminRouteHandler(async () => {
   errorMessage: "获取自定义页面失败",
   logPrefix: "[api/admin/custom-pages:GET] unexpected error",
   unauthorizedMessage: "无权访问",
+  permission: "admin.operations.manage",
 })
 
 export const POST = createAdminRouteHandler(async ({ request }) => {
@@ -68,4 +69,5 @@ export const POST = createAdminRouteHandler(async ({ request }) => {
   errorMessage: "自定义页面操作失败",
   logPrefix: "[api/admin/custom-pages:POST] unexpected error",
   unauthorizedMessage: "无权操作",
+  permission: "admin.operations.manage",
 })

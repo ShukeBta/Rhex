@@ -222,6 +222,7 @@ export const adminModerationActionHandlers: Record<string, AdminActionDefinition
     await toggleGodCommentByAdmin({
       commentId: context.targetId,
       adminUserId: context.adminUserId,
+      actor: context.actor,
       action: "mark",
     })
     revalidateCommentPostCache(comment)
@@ -240,6 +241,7 @@ export const adminModerationActionHandlers: Record<string, AdminActionDefinition
     await toggleGodCommentByAdmin({
       commentId: context.targetId,
       adminUserId: context.adminUserId,
+      actor: context.actor,
       action: "unmark",
     })
     revalidateCommentPostCache(comment)

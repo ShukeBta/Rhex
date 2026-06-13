@@ -1,7 +1,9 @@
 import { AnnouncementStatus, BoardStatus, PostStatus, ReportStatus, UserRole, UserStatus } from "@/db/types"
+import { prisma } from "@/db/client"
 
 import { getCurrentUser } from "@/lib/auth"
 import type { AdminPostListResult } from "@/lib/admin-post-management"
+import type { AdminPermissionKey } from "@/lib/admin-permission-policy"
 export { getRequestIp } from "@/lib/request-ip"
 
 import { getAdminDashboardRawData, getAdminStructureRawData } from "@/db/admin-dashboard-queries"
@@ -36,22 +38,29 @@ import {
 } from "@/lib/moderator-permissions"
 import { apiError } from "./api-route"
 import { getAdminBoardApplicationPageData } from "@/lib/board-applications"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import { canAdminWithPermissionOverrides, getAdminPermissionGrants } from "@/lib/admin-permission-overrides"
 import { isFounderAdmin } from "@/lib/admin-founder"
 
-export async function requireAdminUser() {
+export async function requireAdminUser(permission?: AdminPermissionKey) {
   const currentUser = await getCurrentUser()
 
   if (!currentUser || currentUser.role !== UserRole.ADMIN) {
     return null
   }
 
-  return {
+  const actor = {
     ...currentUser,
     role: "ADMIN",
     moderatedZoneScopes: [],
     moderatedBoardScopes: [],
   } satisfies AdminActor
+
+  if (permission && !await canAdminWithPermissionOverrides(actor, permission)) {
+    return null
+  }
+
+  return actor
 }
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
@@ -60,6 +69,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   if (!currentUser) {
     apiError(403, "无权限访问后台数据")
   }
+  await ensureAdminActorPermission(currentUser, "admin.overview.view", "无权限访问后台数据")
 
   const data = await getAdminDashboardRawData()
 
@@ -72,6 +82,7 @@ export async function getAdminStructureData(): Promise<AdminStructureData> {
   if (!currentUser) {
     apiError(403, "无权限访问后台版块数据")
   }
+  await ensureAdminActorPermission(currentUser, "admin.structure.view", "无权限访问后台版块数据")
 
   const actorIsFounder = currentUser.role === "ADMIN" ? await isFounderAdmin(currentUser.id) : false
   const adminPermissionGrants = actorIsFounder ? [] : await getAdminPermissionGrants(currentUser.id)
@@ -93,12 +104,44 @@ export async function getAdminStructureData(): Promise<AdminStructureData> {
   }
 }
 
+export async function getAdminBoardApplicationData(): Promise<{
+  zones: Array<{ id: string; name: string; slug: string }>
+  boardApplications: AdminStructureData["boardApplications"]
+  canReviewBoardApplications: boolean
+}> {
+  const currentUser = await requireSiteAdminActor()
+
+  if (!currentUser) {
+    apiError(403, "无权限访问节点申请")
+  }
+  await ensureAdminActorPermission(currentUser, "admin.operations.manage", "无权限访问节点申请")
+
+  const [zones, boardApplications] = await Promise.all([
+    prisma.zone.findMany({
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    }),
+    getAdminBoardApplicationPageData(),
+  ])
+
+  return {
+    zones,
+    boardApplications: boardApplications.items,
+    canReviewBoardApplications: true,
+  }
+}
+
 export async function getAdminPosts(query: AdminPostQuery = {}): Promise<AdminPostListResult> {
   const currentUser = await requireAdminActor()
 
   if (!currentUser) {
     apiError(403, "无权限访问帖子管理")
   }
+  await ensureAdminActorPermission(currentUser, "admin.content.manage", "无权限访问帖子管理")
 
   const normalizedQuery = normalizeAdminPostQuery(query)
   const where = buildAdminPostWhere(currentUser, normalizedQuery)
@@ -158,6 +201,7 @@ export async function getAdminComments(query: AdminCommentQuery = {}) {
   if (!currentUser) {
     apiError(403, "无权限访问评论管理")
   }
+  await ensureAdminActorPermission(currentUser, "admin.comments.manage", "无权限访问评论管理")
 
   const normalizedQuery = normalizeAdminCommentQuery(query)
   const where = buildAdminCommentWhere(currentUser, normalizedQuery)

@@ -179,7 +179,7 @@ async function ensureUniqueDocumentSlug(type: SiteDocumentType, inputSlug: strin
 }
 
 export async function getAdminSiteDocumentList(): Promise<AdminSiteDocumentItem[]> {
-  const currentUser = await requireAdminUser()
+  const currentUser = await requireAdminUser("admin.operations.manage")
   if (!currentUser) {
     apiError(403, "无权限访问站点文档数据")
   }
@@ -189,7 +189,7 @@ export async function getAdminSiteDocumentList(): Promise<AdminSiteDocumentItem[
 }
 
 export async function saveAdminSiteDocument(input: AdminSiteDocumentInput) {
-  const currentUser = await requireAdminUser()
+  const currentUser = await requireAdminUser("admin.operations.manage")
   if (!currentUser) {
     apiError(403, "无权操作站点文档")
   }
@@ -269,7 +269,7 @@ export async function saveAdminSiteDocument(input: AdminSiteDocumentInput) {
 }
 
 export async function removeAdminSiteDocument(id: string) {
-  const currentUser = await requireAdminUser()
+  const currentUser = await requireAdminUser("admin.operations.manage")
   if (!currentUser) {
     apiError(403, "无权删除站点文档")
   }
@@ -282,7 +282,7 @@ export async function removeAdminSiteDocument(id: string) {
 }
 
 export async function toggleAdminSiteDocumentPin(id: string, isPinned: boolean) {
-  const currentUser = await requireAdminUser()
+  const currentUser = await requireAdminUser("admin.operations.manage")
   if (!currentUser) {
     apiError(403, "无权更新站点文档")
   }
@@ -302,7 +302,7 @@ export async function toggleAdminSiteDocumentPin(id: string, isPinned: boolean) 
 }
 
 export async function updateAdminSiteDocumentStatus(id: string, status: string) {
-  const currentUser = await requireAdminUser()
+  const currentUser = await requireAdminUser("admin.operations.manage")
   if (!currentUser) {
     apiError(403, "无权更新站点文档")
   }

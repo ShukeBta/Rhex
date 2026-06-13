@@ -27,7 +27,7 @@ import { getSiteSettings } from "@/lib/site-settings"
 import { getZoneBoards, getZoneBySlug, getZonePosts, getZones } from "@/lib/zones"
 import { RssSubscribeButton } from "@/components/rss/rss-subscribe-button"
 import { ForumPostStreamView } from "@/components/forum/forum-post-stream-view"
-import { resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
+import { resolveContentVisibleAdminActor } from "@/lib/admin-scope-permissions"
 
 export const dynamic = "force-dynamic"
 
@@ -123,7 +123,7 @@ export default async function ZonePage(props: PageProps<"/zones/[slug]">) {
   const currentSort = normalizeTaxonomyPostSort(rawSort)
   const postListViewer = {
     userId: currentUser?.id ?? null,
-    adminActor: await resolveAdminActorFromSessionUser(currentUser),
+    adminActor: await resolveContentVisibleAdminActor(currentUser),
   }
   const [zoneBoards, postsPage, allBoards, allZones, hotTopics, announcements] = await Promise.all([
     getZoneBoards(params.slug),

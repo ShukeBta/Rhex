@@ -143,9 +143,13 @@ export const ADMIN_PERMISSION_KEYS = ADMIN_PERMISSION_CATALOG.map((item) => item
 
 export const ADMIN_PERMISSION_KEY_SET: ReadonlySet<AdminPermissionKey> = new Set(ADMIN_PERMISSION_KEYS)
 
+export function isCorePermissionCatalogItem(item: AdminPermissionCatalogItem) {
+  return item.coreOnly === true
+}
+
 export const CORE_ADMIN_PERMISSION_KEYS: ReadonlySet<AdminPermissionKey> = new Set(
   ADMIN_PERMISSION_CATALOG
-    .filter((item) => item.coreOnly)
+    .filter(isCorePermissionCatalogItem)
     .map((item) => item.key),
 )
 

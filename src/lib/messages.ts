@@ -15,7 +15,7 @@ import {
   findMessageHistoryAnchor,
   findMessageRecipientById,
 } from "@/db/message-write-queries"
-import { ConversationKind, Prisma, UserRole, UserStatus } from "@/db/types"
+import { ConversationKind, Prisma, UserStatus } from "@/db/types"
 
 import { apiError } from "@/lib/api-route"
 import { enforceSensitiveText } from "@/lib/content-safety"
@@ -52,6 +52,7 @@ import {
 import { getSiteSettings } from "@/lib/site-settings"
 import { getUserDisplayName } from "@/lib/user-display"
 import { ensureUsersCanInteract } from "@/lib/user-blocks"
+import type { AdminActor } from "@/lib/moderator-permissions"
 import type {
   MessageBubbleItem,
   MessageCenterData,
@@ -80,10 +81,7 @@ export async function assertMessageFeatureEnabled() {
 
 type MessageRecipientRecord = NonNullable<Awaited<ReturnType<typeof findMessageRecipientById>>>
 type SiteChatMessageSendResult = MessageSendResult & { participantUserIds: number[] }
-type SiteChatMessageDeleteActor = {
-  id: number
-  role: UserRole | "USER" | "MODERATOR" | "ADMIN"
-}
+type SiteChatMessageDeleteActor = AdminActor
 type SiteChatLatestMessageForDeletion = {
   id: string
   body: string
@@ -545,9 +543,8 @@ export async function deleteSiteChatMessageForAdmin(
 ): Promise<SiteChatMessageDeleteResult> {
   await assertMessageFeatureEnabled()
 
-  if (actor.role !== UserRole.ADMIN) {
-    apiError(403, "无权删除全站聊天室消息")
-  }
+  const { ensureAdminActorPermission } = await import("@/lib/admin-scope-permissions")
+  await ensureAdminActorPermission(actor, "admin.operations.manage", "无权删除全站聊天室消息")
 
   const result = await prisma.$transaction(async (tx) => {
     const message = await tx.directMessage.findFirst({

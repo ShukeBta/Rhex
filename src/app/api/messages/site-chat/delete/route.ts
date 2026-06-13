@@ -41,4 +41,5 @@ export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
   errorMessage: "删除聊天室消息失败",
   logPrefix: "[api/messages/site-chat/delete] unexpected error",
   unauthorizedMessage: "无权删除全站聊天室消息",
+  permission: "admin.operations.manage",
 })

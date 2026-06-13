@@ -18,6 +18,7 @@ import {
   type RssSourceAdminRecord,
 } from "@/db/rss-harvest-queries"
 import { apiError } from "@/lib/api-route"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
 import {
   cancelDelayedBackgroundJob,
   ensureDelayedBackgroundJob,
@@ -79,6 +80,7 @@ import { sleep } from "@/lib/shared/async"
 import { addMinutes, addSeconds, toIsoString } from "@/lib/shared/date"
 import { normalizeBoolean, normalizeNumber, normalizeText, normalizeTrimmedText } from "@/lib/shared/normalizers"
 import { toPrismaJsonValue } from "@/lib/shared/prisma-json"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 
 export const RSS_SETTINGS_CACHE_TAG = "rss-settings"
 
@@ -106,6 +108,14 @@ const MIN_FAILURE_PAUSE_THRESHOLD = 1
 const MAX_FAILURE_PAUSE_THRESHOLD = 20
 const MIN_HOME_PAGE_SIZE = 1
 const MAX_HOME_PAGE_SIZE = 100
+
+async function ensureCanManageRssAdmin() {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.apps.manage",
+    "无权限访问 RSS 抓取后台",
+  )
+}
 
 type LogBufferItem = {
   level: RssLogLevel
@@ -721,6 +731,8 @@ async function getRssSchedulerStatus() {
 }
 
 export async function repairRssSchedulerJob() {
+  await ensureCanManageRssAdmin()
+
   await cleanupStaleRssDelayedJobs()
   const activeSources = await listEnabledRssSources()
   let createdCount = 0
@@ -985,6 +997,8 @@ export async function getRssAdminData(options?: {
   recentRunsPage?: number
   recentLogsPage?: number
 }): Promise<RssAdminData> {
+  await ensureCanManageRssAdmin()
+
   const [
     settings,
     schedulerStatus,
@@ -1109,6 +1123,8 @@ export async function getRssAdminData(options?: {
 }
 
 export async function getRssSourceQueuePage(sourceId: string, options?: { page?: number }): Promise<RssSourceQueuePageData> {
+  await ensureCanManageRssAdmin()
+
   const source = await findRssSourceById(sourceId)
   if (!source) {
     apiError(404, "RSS 任务不存在")
@@ -1127,6 +1143,8 @@ export async function getRssSourceQueuePage(sourceId: string, options?: { page?:
 }
 
 export async function getRssSourceRunPage(sourceId: string, options?: { page?: number }): Promise<RssSourceRunPageData> {
+  await ensureCanManageRssAdmin()
+
   const source = await findRssSourceById(sourceId)
   if (!source) {
     apiError(404, "RSS 任务不存在")
@@ -1160,6 +1178,8 @@ export async function getRssSourceRunPage(sourceId: string, options?: { page?: n
 }
 
 export async function getRssRecentRunPage(options?: { page?: number }): Promise<RssGlobalRunPageData> {
+  await ensureCanManageRssAdmin()
+
   const total = await countRssExecutionItems()
   const pagination = resolvePagination({ page: options?.page, pageSize: RSS_MODAL_PAGE_SIZE }, total, [RSS_MODAL_PAGE_SIZE], RSS_MODAL_PAGE_SIZE)
   const items = await listRssExecutionItemsPage(pagination.skip, pagination.pageSize)
@@ -1186,6 +1206,8 @@ export async function getRssRecentRunPage(options?: { page?: number }): Promise<
 }
 
 export async function getRssRecentLogPage(options?: { page?: number }): Promise<RssGlobalLogPageData> {
+  await ensureCanManageRssAdmin()
+
   const page = await getRssExecutionLogPage({
     page: options?.page,
     pageSize: RSS_MODAL_PAGE_SIZE,
@@ -1205,6 +1227,8 @@ export async function getRssRecentLogPage(options?: { page?: number }): Promise<
 }
 
 export async function saveRssSettings(input: Record<string, unknown>) {
+  await ensureCanManageRssAdmin()
+
   const current = await getOrCreateRssSettingRecord()
   const normalized = normalizeSettingsInput(input)
 
@@ -1252,6 +1276,8 @@ export async function getRssHomeDisplaySettings() {
 }
 
 export async function testRssSourceConnection(input: Record<string, unknown>) {
+  await ensureCanManageRssAdmin()
+
   const settings = await getOrCreateRssSettingRecord()
   const feedUrl = normalizeAbsoluteHttpUrl(input.feedUrl, "RSS 地址")
   const fetchTimeoutMs = input.requestTimeoutMs === "" || input.requestTimeoutMs === null || typeof input.requestTimeoutMs === "undefined"
@@ -1283,6 +1309,8 @@ export async function testRssSourceConnection(input: Record<string, unknown>) {
 }
 
 export async function createRssSource(input: Record<string, unknown>) {
+  await ensureCanManageRssAdmin()
+
   const normalized = normalizeSourceInput(input)
   const existing = await findRssSourceByFeedUrl(normalized.feedUrl)
 
@@ -1322,6 +1350,8 @@ export async function createRssSource(input: Record<string, unknown>) {
 }
 
 export async function updateRssSource(id: string, input: Record<string, unknown>) {
+  await ensureCanManageRssAdmin()
+
   const source = await findRssSourceById(id)
   if (!source) {
     apiError(404, "RSS 任务不存在")
@@ -1457,6 +1487,8 @@ async function enqueueRssSourceJobInternal(params: {
 }
 
 export async function enqueueRssSourceRunNow(sourceId: string) {
+  await ensureCanManageRssAdmin()
+
   const source = await findRssSourceById(sourceId)
   if (!source) {
     apiError(404, "RSS 任务不存在")
@@ -1471,6 +1503,8 @@ export async function enqueueRssSourceRunNow(sourceId: string) {
 }
 
 export async function startRssSource(sourceId: string) {
+  await ensureCanManageRssAdmin()
+
   const source = await findRssSourceById(sourceId)
   if (!source) {
     apiError(404, "RSS 任务不存在")
@@ -1493,6 +1527,8 @@ export async function startRssSource(sourceId: string) {
 }
 
 export async function stopRssSource(sourceId: string) {
+  await ensureCanManageRssAdmin()
+
   const source = await findRssSourceById(sourceId)
   if (!source) {
     apiError(404, "RSS 任务不存在")
@@ -1513,6 +1549,8 @@ export async function stopRssSource(sourceId: string) {
 }
 
 export async function clearRssLogsHistory() {
+  await ensureCanManageRssAdmin()
+
   const result = await clearRssExecutionLogs()
   return {
     count: result.count,
@@ -1520,6 +1558,8 @@ export async function clearRssLogsHistory() {
 }
 
 export async function clearRssSourceQueueHistory(sourceId: string) {
+  await ensureCanManageRssAdmin()
+
   const source = await findRssSourceById(sourceId)
   if (!source) {
     apiError(404, "RSS 任务不存在")
@@ -1534,6 +1574,8 @@ export async function clearRssSourceQueueHistory(sourceId: string) {
 }
 
 export async function clearRssSourceRunHistory(sourceId: string) {
+  await ensureCanManageRssAdmin()
+
   const source = await findRssSourceById(sourceId)
   if (!source) {
     apiError(404, "RSS 任务不存在")
@@ -1550,6 +1592,8 @@ export async function clearRssSourceRunHistory(sourceId: string) {
 }
 
 export async function clearRssRunHistoryRecords() {
+  await ensureCanManageRssAdmin()
+
   const queueIds = await listCompletedRssQueueIds()
   const result = await clearRssQueueHistory()
   await deleteRssExecutionLogsByRunIds(queueIds.map((item) => item.id))

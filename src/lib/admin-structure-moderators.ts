@@ -6,6 +6,7 @@ import {
   upsertModeratorTargetScope,
 } from "@/db/admin-moderator-scope-queries"
 import { apiError, readOptionalStringField, type JsonObject } from "@/lib/api-route"
+import { canAdminWithPermissionOverrides } from "@/lib/admin-permission-overrides"
 import type { AdminActor } from "@/lib/moderator-permissions"
 import { canManageBoard, canManageZone, isSiteAdmin } from "@/lib/moderator-permissions"
 import { getUserDisplayName } from "@/lib/user-display"
@@ -39,10 +40,18 @@ function ensureCanManageModeratorTarget(actor: AdminActor, target: {
   }
 }
 
+async function ensureCanAssignModerators(actor: AdminActor) {
+  if (!await canAdminWithPermissionOverrides(actor, "admin.structure.assignModerators")) {
+    apiError(403, "无权配置版主")
+  }
+}
+
 export async function upsertStructureModerator(params: {
   actor: AdminActor
   body: JsonObject
 }) {
+  await ensureCanAssignModerators(params.actor)
+
   const rawBody = params.body as Record<string, unknown>
   const targetType = readTargetType(rawBody.targetType)
   const targetId = readOptionalStringField(rawBody, "targetId")
@@ -116,6 +125,8 @@ export async function removeStructureModerator(params: {
   actor: AdminActor
   body: JsonObject
 }) {
+  await ensureCanAssignModerators(params.actor)
+
   const rawBody = params.body as Record<string, unknown>
   const targetType = readTargetType(rawBody.targetType)
   const targetId = readOptionalStringField(rawBody, "targetId")

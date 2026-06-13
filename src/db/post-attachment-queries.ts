@@ -52,6 +52,12 @@ const postAttachmentActionSelect = {
       title: true,
       status: true,
       authorId: true,
+      boardId: true,
+      board: {
+        select: {
+          zoneId: true,
+        },
+      },
     },
   },
 } satisfies Prisma.PostAttachmentSelect

@@ -35,6 +35,7 @@ import { VipDisplayName } from "@/components/vip/vip-display-name"
 import { resolveUserProfileIntroductionPermission } from "@/lib/addon-user-profile-introduction-permissions"
 import { getAiAgentUserIds } from "@/lib/ai-agent"
 import { getCurrentUser } from "@/lib/auth"
+import { canAdminActorUsePermission } from "@/lib/admin-scope-permissions"
 import { getBadgeEligibilitySnapshot, getGrantedBadgesForUser } from "@/lib/badges"
 import { getBoards } from "@/lib/boards"
 import { getPublicFavoriteCollectionsByUsername } from "@/lib/favorite-collections"
@@ -47,6 +48,7 @@ import { readSearchParam } from "@/lib/search-params"
 import { getUserActiveBoardsByRecentReplies, getUserProfile, getUserPostsPage, getUserRecentRepliesPage } from "@/lib/users"
 import { getVipLevel, isVipActive } from "@/lib/vip-status"
 import { getZones } from "@/lib/zones"
+import { resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
 import { resolveUserStatusReason } from "@/lib/user-status-reason"
 
 const identityTagClassNames = {
@@ -333,7 +335,14 @@ export default async function UserPage(props: PageProps<"/users/[username]">) {
     : user.status === "MUTED"
       ? `该用户当前处于禁言状态。原因：${restrictionReason} 解除时间：${restrictionExpiresText}。`
       : null
-  const canManageProfileStatus = Boolean(currentUser && currentUser.role === "ADMIN" && currentUser.id !== user.id && user.role !== "ADMIN")
+  const adminActor = currentUser && currentUser.role === "ADMIN" ? await resolveAdminActorFromSessionUser(currentUser) : null
+  const canManageProfileStatus = Boolean(
+    currentUser
+    && currentUser.id !== user.id
+    && user.role !== "ADMIN"
+    && adminActor
+    && await canAdminActorUsePermission(adminActor, "admin.users.manage"),
+  )
   const profileRestrictionNotice = restrictionDescription || canManageProfileStatus
     ? (
       <div className="flex flex-col gap-3">

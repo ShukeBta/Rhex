@@ -290,6 +290,9 @@ export async function createStructureItem(params: {
   if (!isSiteAdmin(params.actor)) {
     apiError(403, "仅管理员可创建分区或节点")
   }
+  if (!await canAdminWithPermissionOverrides(params.actor, "admin.structure.create")) {
+    apiError(403, "无权创建分区或节点")
+  }
 
   const rawBody = params.body as Record<string, unknown>
   const type = readOptionalStringField(rawBody, "type")
@@ -346,6 +349,10 @@ export async function updateStructureItem(params: {
   adminId: number
   actor: AdminActor
 }) {
+  if (isSiteAdmin(params.actor) && !await canAdminWithPermissionOverrides(params.actor, "admin.structure.edit")) {
+    apiError(403, "无权编辑分区或节点")
+  }
+
   const rawBody = params.body as Record<string, unknown>
   const type = readOptionalStringField(rawBody, "type")
   const id = readOptionalStringField(rawBody, "id")

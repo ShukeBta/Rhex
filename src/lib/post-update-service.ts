@@ -1,9 +1,11 @@
 import { findPostUpdateContext, runPostUpdateTransaction } from "@/db/post-update-queries"
 import { findPostAttachmentsByPostId } from "@/db/post-attachment-queries"
 
+import type { SessionActor } from "@/lib/auth"
 import { apiError } from "@/lib/api-route"
 import { verifyCreatePostCaptchaWithAddonProviders } from "@/lib/addon-captcha-providers"
 import { readAddonFormFieldsFromBody } from "@/lib/addon-form-fields"
+import { canAdminActorManageBoardWithPermission } from "@/lib/admin-scope-permissions"
 import { resolveHookedStringValue } from "@/lib/addon-hook-values"
 import { extractSummaryFromContent } from "@/lib/content"
 import { enforceSensitiveText } from "@/lib/content-safety"
@@ -15,6 +17,7 @@ import { isPostStillEditable } from "@/lib/post-edit-window"
 import { normalizeManualTags, syncPostTaxonomy } from "@/lib/post-editor"
 import { getSiteSettings } from "@/lib/site-settings"
 import { validatePostPayload } from "@/lib/validators"
+import { resolveAdminActorFromSessionUser } from "@/lib/moderator-permissions"
 import { queryAddonPosts } from "@/addons-host/runtime/posts"
 import { executeAddonActionHook, executeAddonWaterfallHook } from "@/addons-host/runtime/hooks"
 
@@ -24,13 +27,7 @@ export async function updatePostFlow(input: {
   postId: string
   body: unknown
   request: Request
-  currentUser: {
-    id: number
-    role?: string | null
-    level?: number | null
-    vipLevel?: number | null
-    vipExpiresAt?: Date | string | null
-  }
+  currentUser: SessionActor
 }) {
   const settings = await getSiteSettings()
   const requestUrl = new URL(input.request.url)
@@ -76,14 +73,23 @@ export async function updatePostFlow(input: {
     apiError(404, "帖子不存在")
   }
 
-  const isAdmin = input.currentUser.role === "ADMIN"
+  const adminActor = await resolveAdminActorFromSessionUser(input.currentUser)
+  const canManagePost = Boolean(
+    adminActor
+    && await canAdminActorManageBoardWithPermission(
+      adminActor,
+      "admin.content.manage",
+      post.boardId,
+      post.board.zoneId,
+    ),
+  )
   const existingContentMeta = getPostContentMeta(post.content)
-  const canEditFull = isAdmin || input.currentUser.id === post.authorId
+  const canEditFull = canManagePost || input.currentUser.id === post.authorId
   if (!canEditFull) {
     apiError(403, "没有权限编辑该帖子")
   }
 
-  const canEditNormally = isAdmin || isPostStillEditable(post.createdAt, settings.postEditableMinutes)
+  const canEditNormally = canManagePost || isPostStillEditable(post.createdAt, settings.postEditableMinutes)
 
   if (canEditNormally && !appendedContent) {
     await verifyCreatePostCaptchaWithAddonProviders({
@@ -120,7 +126,7 @@ export async function updatePostFlow(input: {
         vipLevel: input.currentUser.vipLevel,
         vipExpiresAt: input.currentUser.vipExpiresAt,
       },
-      uploadOwnerUserIds: isAdmin ? [input.currentUser.id, post.authorId] : [post.authorId],
+      uploadOwnerUserIds: canManagePost ? [input.currentUser.id, post.authorId] : [post.authorId],
       allowedExistingAttachmentIds: existingAttachments.map((attachment) => attachment.id),
     })
     const titleHookResult = await executeAddonWaterfallHook("post.title.value", title, {
@@ -284,7 +290,7 @@ export async function updatePostFlow(input: {
     apiError(400, "超过编辑时限后只能追加内容")
   }
 
-  if (!isAdmin && post.lastAppendedAt) {
+  if (!canManagePost && post.lastAppendedAt) {
     const waitMs = APPEND_INTERVAL_MS - (Date.now() - new Date(post.lastAppendedAt).getTime())
     if (waitMs > 0) {
       apiError(429, `追加过于频繁，请 ${Math.ceil(waitMs / (60 * 1000))} 分钟后再试`)

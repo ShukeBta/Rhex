@@ -12,6 +12,8 @@ import {
 } from "@/lib/background-jobs"
 import { formatDateTime } from "@/lib/formatters"
 import { PublicRouteError } from "@/lib/public-route-error"
+import { ensureAdminActorPermission } from "@/lib/admin-scope-permissions"
+import { requireSiteAdminActor } from "@/lib/moderator-permissions"
 import { toPrismaJsonValue } from "@/lib/shared/prisma-json"
 import { deleteStoredUploadFile } from "@/lib/upload"
 
@@ -878,6 +880,12 @@ async function getUploadPageFromUploads(where: Prisma.UploadWhereInput, page: nu
 }
 
 export async function getAdminAttachmentManagement(filters: AdminAttachmentFilters = {}): Promise<AdminAttachmentManagementResult> {
+  await ensureAdminActorPermission(
+    await requireSiteAdminActor(),
+    "admin.operations.manage",
+    "无权限访问附件管理",
+  )
+
   const where = buildUploadWhere(filters)
   const keyword = filters.keyword?.trim() ?? ""
   const bucketType = filters.bucketType?.trim() || "ALL"
